@@ -15,7 +15,7 @@ func Start() error {
 		panic(err)
 	}
 
-	db, err := postgresql.New(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
+	postgresql.New(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
 		config.DBHost,
 		config.DBUsername,
 		config.DBPassword,
@@ -25,7 +25,7 @@ func Start() error {
 
 	app := fiber.New(config)
 	app.Get("/metrics", monitor.New())
-	v1 := app.Group("/api/v1")
+	app.Group("/api/v1") //put return value later (v1)
 
-	return app.Listen(fmt.Sprintf("%s: %d", config.AppHost, config.AppPort))
+	return app.Listen(fmt.Sprintf("%s: %s", config.AppHost, config.AppPort))
 }
