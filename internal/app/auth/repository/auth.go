@@ -15,6 +15,7 @@ type AuthRepositoryItf interface {
 	AddRefreshToken(userId uuid.UUID, token string) error
 	GetUserRefreshTokens(userId uuid.UUID) ([]entity.RefreshToken, error)
 	RemoveRefreshToken(token string) error
+	FindByRefreshToken(token string) (*entity.User, error)
 }
 
 type AuthRepository struct {
@@ -65,4 +66,13 @@ func (r *AuthRepository) GetUserRefreshTokens(userId uuid.UUID) ([]entity.Refres
 
 func (r *AuthRepository) RemoveRefreshToken(token string) error {
 	return r.db.Where("token = ?", token).Delete(&entity.RefreshToken{}).Error
+}
+
+func (r *AuthRepository) FindByRefreshToken(token string) (*entity.User, error) {
+	var refreshToken entity.RefreshToken
+	err := r.db.Preload("User").Where("token = ?", token).First(&refreshToken).Error
+	if err != nil {
+		return nil, err
+	}
+	return refreshToken.User, nil
 }

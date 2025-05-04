@@ -24,6 +24,8 @@ func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf
 	routerGroup.Post("/register", AuthHandler.Register)
 	routerGroup.Post("/verify-otp", AuthHandler.VerifyOTP)
 	routerGroup.Post("/login", AuthHandler.Login)
+	routerGroup.Post("/refresh-token", AuthHandler.RefreshToken)
+	routerGroup.Post("/logout", AuthHandler.Logout)
 }
 
 func (h AuthHandler) Register(ctx *fiber.Ctx) error {
@@ -58,7 +60,7 @@ func (h AuthHandler) VerifyOTP(ctx *fiber.Ctx) error {
 		return res.Error(ctx, err)
 	}
 
-	return ctx.JSON(fiber.Map{
+	return res.SuccessResponse(ctx, "Verification successful", fiber.Map{
 		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
@@ -79,8 +81,46 @@ func (h AuthHandler) Login(ctx *fiber.Ctx) error {
 		return res.Error(ctx, err)
 	}
 
+	return res.SuccessResponse(ctx, "Login successful", fiber.Map{
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
+	})
+}
+
+func (h AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
+	payload := new(dto.RefreshToken)
+	if err := ctx.BodyParser(&payload); err != nil {
+		return res.BadRequest(ctx)
+	}
+
+	if err := h.Validator.Struct(payload); err != nil {
+		return res.ValidationError(ctx, err)
+	}
+
+	accessToken, refreshToken, err := h.AuthUsecase.RefreshToken(payload)
+	if err != nil {
+		return res.Error(ctx, err)
+	}
+
 	return ctx.JSON(fiber.Map{
 		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
+}
+
+func (h AuthHandler) Logout(ctx *fiber.Ctx) error {
+	payload := new(dto.LogoutRequest)
+	if err := ctx.BodyParser(&payload); err != nil {
+		return res.BadRequest(ctx)
+	}
+
+	if err := h.Validator.Struct(payload); err != nil {
+		return res.ValidationError(ctx, err)
+	}
+
+	if err := h.AuthUsecase.Logout(payload); err != nil {
+		return res.Error(ctx, err)
+	}
+
+	return res.SuccessResponse(ctx, "Logout successful", nil)
 }

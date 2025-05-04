@@ -22,6 +22,8 @@ type AuthUsecaseItf interface {
 	Register(*dto.RegisterRequest) *res.Err
 	VerifyOTP(*dto.VerifyOTPRequest) (string, string, *res.Err)
 	Login(*dto.LoginRequest) (string, string, *res.Err)
+	RefreshToken(*dto.RefreshToken) (string, string, *res.Err)
+	Logout(*dto.LogoutRequest) *res.Err
 }
 
 type AuthUsecase struct {
@@ -167,4 +169,54 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 	}
 
 	return accessToken, refreshToken, nil
+}
+
+func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, *res.Err) {
+	user, err := uc.repo.FindByRefreshToken(payload.RefreshToken)
+	if err != nil {
+		return "", "", res.ErrNotFound("User not found")
+	}
+
+	if user != nil {
+		if _, err := uc.jwt.VerifyRefreshToken(payload.RefreshToken); err != nil {
+			return "", "", res.ErrUnauthorized("Invalid refresh token")
+		}
+
+		refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
+		if err != nil {
+			return "", "", res.ErrInternalServer("Failed to generate refresh token")
+		}
+
+		if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
+			return "", "", res.ErrInternalServer("Failed to remove refresh token")
+		}
+
+		if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+			return "", "", res.ErrInternalServer("Failed to add refresh token")
+		}
+
+		accessToken, err := uc.jwt.GenerateAccessToken(user.ID, user.Name, user.Email)
+		if err != nil {
+			return "", "", res.ErrInternalServer("Failed to generate access token")
+		}
+
+		return accessToken, refreshToken, nil
+	}
+
+	return "", "", res.ErrInternalServer("Invalid refresh token")
+}
+
+func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
+	user, err := uc.repo.FindByRefreshToken(payload.RefreshToken)
+	if err != nil {
+		return res.ErrNotFound("User not found")
+	}
+
+	if user != nil {
+		if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
+			return res.ErrInternalServer("Failed to remove refresh token")
+		}
+	}
+
+	return nil
 }
