@@ -14,13 +14,13 @@ type VerifyOTPRequest struct {
 type LoginRequest struct {
 	Email      string `json:"email" validate:"required,email"`
 	Password   string `json:"password" validate:"required,min=6,passwd"`
-	RememberMe bool   `json:"remember_me"`
+	RememberMe bool   `json:"rememberMe"`
 }
 
 type RefreshToken struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }
 
 type LogoutRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }
