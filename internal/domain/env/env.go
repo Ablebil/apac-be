@@ -1,6 +1,8 @@
 package env
 
 import (
+	"time"
+
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
 )
@@ -17,7 +19,10 @@ type Env struct {
 	DBUsername string `env:"DB_USER"`
 	DBPassword string `env:"DB_PASSWORD"`
 
-	TokenLength int `env:"TOKEN_LENGTH"`
+	RedisHost     string `env:"REDIS_HOST"`
+	RedisPort     int    `env:"REDIS_PORT"`
+	RedisUsername string `env:"REDIS_USER"`
+	RedisPassword string `env:"REDIS_PASSWORD"`
 
 	GoogleClientID     string `env:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET"`
@@ -28,6 +33,9 @@ type Env struct {
 
 	AccessSecret  string `env:"JWT_SECRET"`
 	RefreshSecret string `env:"JWT_REFRESH_SECRET"`
+
+	StateLength int           `env:"STATE_LENGTH"`
+	StateExpiry time.Duration `env:"STATE_EXPIRY"`
 }
 
 func New() (*Env, error) {

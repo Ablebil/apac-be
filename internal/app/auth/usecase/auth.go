@@ -7,10 +7,14 @@ import (
 	"apac/internal/domain/env"
 	"apac/internal/infra/email"
 	"apac/internal/infra/jwt"
+	"apac/internal/infra/oauth"
+	"apac/internal/infra/redis"
 	res "apac/internal/infra/response"
+	"encoding/base64"
 
 	"golang.org/x/crypto/bcrypt"
 
+	crand "crypto/rand"
 	"fmt"
 	"math/rand"
 	"time"
@@ -21,27 +25,41 @@ import (
 type AuthUsecaseItf interface {
 	Register(*dto.RegisterRequest) *res.Err
 	VerifyOTP(*dto.VerifyOTPRequest) (string, string, *res.Err)
-	ChoosePreference(*dto.ChoosePreference) *res.Err
 	Login(*dto.LoginRequest) (string, string, *res.Err)
 	RefreshToken(*dto.RefreshToken) (string, string, *res.Err)
 	Logout(*dto.LogoutRequest) *res.Err
+	GoogleLogin() (string, *res.Err)
+	GoogleCallback(*dto.GoogleCallbackRequest) (string, string, *res.Err)
+	ChoosePreference(*dto.ChoosePreferenceResponse) *res.Err
 }
 
 type AuthUsecase struct {
 	repo  repository.AuthRepositoryItf
 	jwt   jwt.JWTItf
 	db    *gorm.DB
+	redis redis.RedisItf
 	email email.EmailItf
 	env   *env.Env
+	oauth oauth.OAuthItf
 }
 
-func NewAuthUsecase(env *env.Env, db *gorm.DB, authRepository repository.AuthRepositoryItf, jwt jwt.JWTItf, email email.EmailItf) AuthUsecaseItf {
+func NewAuthUsecase(
+	env *env.Env,
+	db *gorm.DB,
+	redis redis.RedisItf,
+	authRepository repository.AuthRepositoryItf,
+	jwt jwt.JWTItf,
+	email email.EmailItf,
+	oauth oauth.OAuthItf,
+) AuthUsecaseItf {
 	return &AuthUsecase{
 		repo:  authRepository,
 		jwt:   jwt,
+		redis: redis,
 		db:    db,
 		email: email,
 		env:   env,
+		oauth: oauth,
 	}
 }
 
@@ -235,7 +253,108 @@ func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
 	return nil
 }
 
-func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreference) *res.Err {
+func (uc *AuthUsecase) GoogleLogin() (string, *res.Err) {
+	stateLength := uc.env.StateLength
+	bytes := make([]byte, stateLength)
+	if _, err := crand.Read(bytes); err != nil {
+		return "", res.ErrInternalServer("Failed to generate state")
+	}
+
+	state := base64.RawURLEncoding.EncodeToString(bytes)
+
+	if len(state) > stateLength {
+		state = state[:stateLength]
+	}
+
+	if err := uc.redis.Set(state, []byte(state), uc.env.StateExpiry); err != nil {
+		return "", res.ErrInternalServer("Failed to save oauth state")
+	}
+
+	url, err := uc.oauth.GenerateLink(state)
+	if err != nil {
+		return "", res.ErrInternalServer("Failed to generate oauth link")
+	}
+
+	return url, nil
+}
+
+func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, *res.Err) {
+	if payload.Error != "" {
+		return "", "", res.ErrInternalServer("Google callback returns with error: " + payload.Error)
+	}
+
+	state, err := uc.redis.Get(payload.State)
+	if err != nil {
+		return "", "", res.ErrUnauthorized("OAuth state not found")
+	}
+
+	if string(state) != payload.State {
+		return "", "", res.ErrUnauthorized("OAuth state not found")
+	}
+
+	if err := uc.redis.Delete(payload.State); err != nil {
+		return "", "", res.ErrInternalServer()
+	}
+
+	token, err := uc.oauth.ExchangeToken(payload.Code)
+	if err != nil {
+		return "", "", res.ErrInternalServer(err.Error())
+	}
+
+	profile, err := uc.oauth.GetProfile(token)
+	if err != nil {
+		return "", "", res.ErrInternalServer(err.Error())
+	}
+
+	user, err := uc.repo.FindByEmail(profile.Email)
+	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to fetch from database")
+	}
+
+	if user == nil {
+		user = &entity.User{
+			Email:    profile.Email,
+			Name:     profile.Name,
+			GoogleID: &profile.ID,
+			Verified: profile.Verified,
+		}
+
+		if err := uc.repo.Create(user); err != nil {
+			return "", "", res.ErrInternalServer("Unable to create user")
+		}
+	}
+
+	if !user.Verified {
+		return "", "", res.ErrForbidden("Account not verified")
+	}
+
+	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, payload.RememberMe)
+	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to generate refresh token")
+	}
+
+	refreshTokens, err := uc.repo.GetUserRefreshTokens(user.ID)
+	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to get refresh tokens")
+	}
+
+	if len(refreshTokens) >= 2 {
+		uc.repo.RemoveRefreshToken(refreshTokens[0].Token)
+	}
+
+	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+		return "", "", res.ErrInternalServer("Failed to add refresh token")
+	}
+
+	accessToken, err := uc.jwt.GenerateAccessToken(user.ID, user.Name, user.Email)
+	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to generate access token")
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceResponse) *res.Err {
 	user, err := uc.repo.FindByEmail(payload.Email)
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")

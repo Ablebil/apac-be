@@ -11,8 +11,3 @@ type Res struct {
 	Message    string `json:"message"`
 	Payload    any    `json:"payload,omitempty"`
 }
-
-const (
-	OAuthLoginSuccess = "OAuth login success"
-	LoginSuccess      = "Login success"
-)
