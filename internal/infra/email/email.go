@@ -16,7 +16,7 @@ type Email struct {
 	password string
 }
 
-func NewEmailService(env *env.Env) EmailItf {
+func NewEmail(env *env.Env) EmailItf {
 	return &Email{
 		sender:   env.EmailUser,
 		password: env.EmailPass,

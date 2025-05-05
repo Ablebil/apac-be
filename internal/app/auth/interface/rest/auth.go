@@ -27,6 +27,8 @@ func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf
 	routerGroup.Post("/login", AuthHandler.Login)
 	routerGroup.Post("/refresh-token", AuthHandler.RefreshToken)
 	routerGroup.Post("/logout", AuthHandler.Logout)
+	routerGroup.Get("/google", AuthHandler.GoogleLogin)
+	routerGroup.Post("/google", AuthHandler.GoogleCallback)
 }
 
 func (h AuthHandler) Register(ctx *fiber.Ctx) error {
@@ -62,8 +64,8 @@ func (h AuthHandler) VerifyOTP(ctx *fiber.Ctx) error {
 	}
 
 	return res.SuccessResponse(ctx, "Verification successful", fiber.Map{
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
@@ -83,8 +85,8 @@ func (h AuthHandler) Login(ctx *fiber.Ctx) error {
 	}
 
 	return res.SuccessResponse(ctx, "Login successful", fiber.Map{
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
@@ -103,9 +105,9 @@ func (h AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
 		return res.Error(ctx, err)
 	}
 
-	return ctx.JSON(fiber.Map{
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+	return res.SuccessResponse(ctx, "Token refreshed", fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
@@ -126,8 +128,40 @@ func (h AuthHandler) Logout(ctx *fiber.Ctx) error {
 	return res.SuccessResponse(ctx, "Logout successful", nil)
 }
 
+func (h AuthHandler) GoogleLogin(ctx *fiber.Ctx) error {
+	url, err := h.AuthUsecase.GoogleLogin()
+	if err != nil {
+		return res.Error(ctx, err)
+	}
+
+	return res.SuccessResponse(ctx, "Google login url returned", fiber.Map{
+		"url": url,
+	})
+}
+
+func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
+	payload := new(dto.GoogleCallbackRequest)
+	if err := ctx.BodyParser(&payload); err != nil {
+		return res.BadRequest(ctx)
+	}
+
+	if err := h.Validator.Struct(payload); err != nil {
+		return res.ValidationError(ctx, err)
+	}
+
+	accessToken, refreshToken, err := h.AuthUsecase.GoogleCallback(payload)
+	if err != nil {
+		return res.Error(ctx, err)
+	}
+
+	return res.SuccessResponse(ctx, "Token refreshed", fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
+
 func (h AuthHandler) ChoosePreference(ctx *fiber.Ctx) error {
-	payload := new(dto.ChoosePreference)
+	payload := new(dto.ChoosePreferenceResponse)
 	if err := ctx.BodyParser(&payload); err != nil {
 		return res.BadRequest(ctx)
 	}

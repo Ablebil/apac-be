@@ -5,7 +5,9 @@ import (
 	"apac/internal/infra/email"
 	"apac/internal/infra/fiber"
 	"apac/internal/infra/jwt"
+	"apac/internal/infra/oauth"
 	"apac/internal/infra/postgresql"
+	"apac/internal/infra/redis"
 	"fmt"
 
 	AuthHandler "apac/internal/app/auth/interface/rest"
@@ -40,7 +42,9 @@ func Start() error {
 
 	v := validator.New()
 	j := jwt.NewJWT(config)
-	e := email.NewEmailService(config)
+	e := email.NewEmail(config)
+	o := oauth.NewOAuth(config)
+	r := redis.NewRedis(config)
 
 	app := fiber.New(config)
 	app.Get("/metrics", monitor.New())
@@ -48,7 +52,7 @@ func Start() error {
 
 	authRepository := AuthRepo.NewAuthRepository(db)
 
-	authUsecase := AuthUsecase.NewAuthUsecase(config, db, authRepository, j, e)
+	authUsecase := AuthUsecase.NewAuthUsecase(config, db, r, authRepository, j, e, o)
 	AuthHandler.NewAuthHandler(v1, authUsecase, v)
 
 	return app.Listen(fmt.Sprintf("%s: %d", config.AppHost, config.AppPort))

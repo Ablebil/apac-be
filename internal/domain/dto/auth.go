@@ -11,7 +11,7 @@ type VerifyOTPRequest struct {
 	OTP   string `json:"otp" validate:"required,len=6,numeric"`
 }
 
-type ChoosePreference struct {
+type ChoosePreferenceResponse struct {
 	Email       string   `json:"email" validate:"required,email"`
 	Preferences []string `json:"preferences" validate:"required"`
 }
@@ -28,4 +28,19 @@ type RefreshToken struct {
 
 type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+type GoogleCallbackRequest struct {
+	Code       string `json:"code" validate:"required"`
+	State      string `json:"state" validate:"required"`
+	RememberMe bool   `json:"remember_me"`
+	Error      string `json:"error"`
+}
+
+type GoogleProfileResponse struct {
+	ID       string `json:"google_id" validate:"required"`
+	Email    string `json:"email" validate:"required, email"`
+	Username string `json:"username" validate:"required"`
+	Name     string `json:"name" validate:"required"`
+	Verified bool   `json:"verified" validate:"required"`
 }
