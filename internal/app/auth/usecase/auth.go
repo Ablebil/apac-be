@@ -49,7 +49,7 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 	user, err := uc.repo.FindByEmail(payload.Email)
 
 	if err != nil {
-		return res.ErrInternalServer("Internal server error")
+		return res.ErrInternalServer("Failed to find user")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
@@ -102,13 +102,15 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string, *res.Err) {
 	user, err := uc.repo.FindByEmail(payload.Email)
 	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to find user")
+	}
+
+	if user == nil {
 		return "", "", res.ErrNotFound("User not found")
 	}
 
-	if user != nil {
-		if user.OTP == "" || user.OTP != payload.OTP || time.Now().After(*user.OTPExpiresAt) {
-			return "", "", res.ErrBadRequest("Invalid or expired OTP")
-		}
+	if user.OTP == "" || user.OTP != payload.OTP || time.Now().After(*user.OTPExpiresAt) {
+		return "", "", res.ErrBadRequest("Invalid or expired OTP")
 	}
 
 	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
@@ -139,7 +141,11 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Err) {
 	user, err := uc.repo.FindByEmail(payload.Email)
 	if err != nil {
-		return "", "", res.ErrBadRequest("Incorrect email or password")
+		return "", "", res.ErrInternalServer("Failed to find user")
+	}
+
+	if user == nil {
+		return "", "", res.ErrNotFound("User not found")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
@@ -175,34 +181,36 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, *res.Err) {
 	user, err := uc.repo.FindByRefreshToken(payload.RefreshToken)
 	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to find user")
+	}
+
+	if user == nil {
 		return "", "", res.ErrNotFound("User not found")
 	}
 
-	if user != nil {
-		if _, err := uc.jwt.VerifyRefreshToken(payload.RefreshToken); err != nil {
-			return "", "", res.ErrUnauthorized("Invalid refresh token")
-		}
-
-		refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
-		if err != nil {
-			return "", "", res.ErrInternalServer("Failed to generate refresh token")
-		}
-
-		if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
-			return "", "", res.ErrInternalServer("Failed to remove refresh token")
-		}
-
-		if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
-			return "", "", res.ErrInternalServer("Failed to add refresh token")
-		}
-
-		accessToken, err := uc.jwt.GenerateAccessToken(user.ID, user.Name, user.Email)
-		if err != nil {
-			return "", "", res.ErrInternalServer("Failed to generate access token")
-		}
-
-		return accessToken, refreshToken, nil
+	if _, err := uc.jwt.VerifyRefreshToken(payload.RefreshToken); err != nil {
+		return "", "", res.ErrUnauthorized("Invalid refresh token")
 	}
+
+	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
+	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to generate refresh token")
+	}
+
+	if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
+		return "", "", res.ErrInternalServer("Failed to remove refresh token")
+	}
+
+	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+		return "", "", res.ErrInternalServer("Failed to add refresh token")
+	}
+
+	accessToken, err := uc.jwt.GenerateAccessToken(user.ID, user.Name, user.Email)
+	if err != nil {
+		return "", "", res.ErrInternalServer("Failed to generate access token")
+	}
+
+	return accessToken, refreshToken, nil
 
 	return "", "", res.ErrInternalServer("Invalid refresh token")
 }
@@ -210,13 +218,15 @@ func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, 
 func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
 	user, err := uc.repo.FindByRefreshToken(payload.RefreshToken)
 	if err != nil {
+		return res.ErrInternalServer("Failed to find user")
+	}
+
+	if user == nil {
 		return res.ErrNotFound("User not found")
 	}
 
-	if user != nil {
-		if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
-			return res.ErrInternalServer("Failed to remove refresh token")
-		}
+	if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
+		return res.ErrInternalServer("Failed to remove refresh token")
 	}
 
 	return nil
@@ -225,10 +235,14 @@ func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
 func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreference) *res.Err {
 	user, err := uc.repo.FindByEmail(payload.Email)
 	if err != nil {
+		return res.ErrInternalServer("Failed to find user")
+	}
+
+	if user == nil {
 		return res.ErrNotFound("User not found")
 	}
 
-	if user != nil && payload.Preferences != nil {
+	if payload.Preferences != nil {
 		for _, pref := range payload.Preferences {
 			if err := uc.repo.AddPreference(user.ID, pref); err != nil {
 				return res.ErrInternalServer("Failed to add preference")
