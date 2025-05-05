@@ -12,9 +12,8 @@ import (
 	AuthRepo "apac/internal/app/auth/repository"
 	AuthUsecase "apac/internal/app/auth/usecase"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
-
-	"apac/internal/infra/validator"
 )
 
 func Start() error {
