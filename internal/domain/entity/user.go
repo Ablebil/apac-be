@@ -16,6 +16,7 @@ type User struct {
 	OTP          string         `gorm:"column:otp;type:char(6)"`
 	OTPExpiresAt *time.Time     `gorm:"column:otp_expires_at;type:timestamp"`
 	Verified     bool           `gorm:"column:verified;type:bool;default:false"`
+	Preference   []Preference   `gorm:"constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`
 	RefreshToken []RefreshToken `gorm:"constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`
 	CreatedAt    *time.Time     `gorm:"column:created_at;type:timestamp;autoCreateTime"`
 	UpdatedAt    *time.Time     `gorm:"column:updated_at;type:timestamp;autoUpdateTime"`

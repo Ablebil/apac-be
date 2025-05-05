@@ -23,6 +23,7 @@ func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf
 	routerGroup = routerGroup.Group("/auth")
 	routerGroup.Post("/register", AuthHandler.Register)
 	routerGroup.Post("/verify-otp", AuthHandler.VerifyOTP)
+	routerGroup.Post("/choose-preference", AuthHandler.ChoosePreference)
 	routerGroup.Post("/login", AuthHandler.Login)
 	routerGroup.Post("/refresh-token", AuthHandler.RefreshToken)
 	routerGroup.Post("/logout", AuthHandler.Logout)
@@ -123,4 +124,21 @@ func (h AuthHandler) Logout(ctx *fiber.Ctx) error {
 	}
 
 	return res.SuccessResponse(ctx, "Logout successful", nil)
+}
+
+func (h AuthHandler) ChoosePreference(ctx *fiber.Ctx) error {
+	payload := new(dto.ChoosePreference)
+	if err := ctx.BodyParser(&payload); err != nil {
+		return res.BadRequest(ctx)
+	}
+
+	if err := h.Validator.Struct(payload); err != nil {
+		return res.ValidationError(ctx, err)
+	}
+
+	if err := h.AuthUsecase.ChoosePreference(payload); err != nil {
+		return res.Error(ctx, err)
+	}
+
+	return res.SuccessResponse(ctx, "Preference updated", nil)
 }

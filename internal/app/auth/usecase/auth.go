@@ -21,6 +21,7 @@ import (
 type AuthUsecaseItf interface {
 	Register(*dto.RegisterRequest) *res.Err
 	VerifyOTP(*dto.VerifyOTPRequest) (string, string, *res.Err)
+	ChoosePreference(*dto.ChoosePreference) *res.Err
 	Login(*dto.LoginRequest) (string, string, *res.Err)
 	RefreshToken(*dto.RefreshToken) (string, string, *res.Err)
 	Logout(*dto.LogoutRequest) *res.Err
@@ -215,6 +216,23 @@ func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
 	if user != nil {
 		if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
 			return res.ErrInternalServer("Failed to remove refresh token")
+		}
+	}
+
+	return nil
+}
+
+func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreference) *res.Err {
+	user, err := uc.repo.FindByEmail(payload.Email)
+	if err != nil {
+		return res.ErrNotFound("User not found")
+	}
+
+	if user != nil && payload.Preferences != nil {
+		for _, pref := range payload.Preferences {
+			if err := uc.repo.AddPreference(user.ID, pref); err != nil {
+				return res.ErrInternalServer("Failed to add preference")
+			}
 		}
 	}
 

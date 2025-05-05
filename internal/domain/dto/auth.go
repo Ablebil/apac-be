@@ -11,6 +11,11 @@ type VerifyOTPRequest struct {
 	OTP   string `json:"otp" validate:"required,len=6,numeric"`
 }
 
+type ChoosePreference struct {
+	Email       string   `json:"email" validate:"required,email"`
+	Preferences []string `json:"preferences" validate:"required"`
+}
+
 type LoginRequest struct {
 	Email      string `json:"email" validate:"required,email"`
 	Password   string `json:"password" validate:"required,min=6,passwd"`
