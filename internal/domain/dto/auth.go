@@ -19,13 +19,13 @@ type ChoosePreference struct {
 type LoginRequest struct {
 	Email      string `json:"email" validate:"required,email"`
 	Password   string `json:"password" validate:"required,min=6"`
-	RememberMe bool   `json:"rememberMe"`
+	RememberMe bool   `json:"remember_me"`
 }
 
 type RefreshToken struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
 type LogoutRequest struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
