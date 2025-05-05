@@ -48,6 +48,10 @@ func ErrForbidden(message ...string) *Err {
 	return newError(fiber.ErrForbidden.Code, fiber.ErrForbidden.Message, message...)
 }
 
+func ErrConflict(message ...string) *Err {
+	return newError(fiber.ErrConflict.Code, fiber.ErrConflict.Message, message...)
+}
+
 func respondWithError(ctx *fiber.Ctx, code int, defaultMsg string, message ...string) error {
 	msg := defaultMsg
 	if len(message) == 1 {
