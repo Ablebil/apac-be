@@ -52,19 +52,20 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 		return res.ErrInternalServer("Failed to find user")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return res.ErrInternalServer("Failed to hash password")
 	}
+	hashedPassword := string(hashed)
 
 	otp := fmt.Sprintf("%06d", 100000+rand.New(rand.NewSource(time.Now().UnixNano())).Intn(900000))
 	otpExpiresAt := time.Now().Add(5 * time.Minute)
 
 	if user != nil {
-		if user.GoogleID != "" && user.Password == "" {
+		if user.GoogleID != nil && user.Password == nil {
 			if err := uc.repo.Update(payload.Email, &entity.User{
-				Password:     string(hashedPassword),
-				OTP:          otp,
+				Password:     &hashedPassword,
+				OTP:          &otp,
 				OTPExpiresAt: &otpExpiresAt,
 			}); err != nil {
 				return res.ErrInternalServer("Failed to update user")
@@ -83,8 +84,8 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 	user = &entity.User{
 		Name:         payload.Name,
 		Email:        payload.Email,
-		Password:     string(hashedPassword),
-		OTP:          otp,
+		Password:     &hashedPassword,
+		OTP:          &otp,
 		OTPExpiresAt: &otpExpiresAt,
 	}
 
@@ -109,7 +110,7 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 		return "", "", res.ErrNotFound("User not found")
 	}
 
-	if user.OTP == "" || user.OTP != payload.OTP || time.Now().After(*user.OTPExpiresAt) {
+	if user.OTP == nil || *user.OTP != payload.OTP || time.Now().After(*user.OTPExpiresAt) {
 		return "", "", res.ErrBadRequest("Invalid or expired OTP")
 	}
 
@@ -123,7 +124,7 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 	}
 
 	if err := uc.repo.Update(payload.Email, &entity.User{
-		OTP:          "",
+		OTP:          nil,
 		OTPExpiresAt: nil,
 		Verified:     true,
 	}); err != nil {
@@ -148,7 +149,7 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 		return "", "", res.ErrNotFound("User not found")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(payload.Password)); err != nil {
 		return "", "", res.ErrBadRequest("Incorrect email or password")
 	}
 
@@ -211,8 +212,6 @@ func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, 
 	}
 
 	return accessToken, refreshToken, nil
-
-	return "", "", res.ErrInternalServer("Invalid refresh token")
 }
 
 func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
