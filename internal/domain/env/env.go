@@ -8,13 +8,13 @@ import (
 type Env struct {
 	AppEnv  string `env:"APP_ENV"`
 	AppHost string `env:"APP_HOST"`
-	AppPort string `env:"APP_PORT"`
+	AppPort int    `env:"APP_PORT"`
 	AppUrl  string `env:"APP_URL"`
 
 	DBHost     string `env:"DB_HOST"`
-	DBPort     string `env:"DB_PORT"`
+	DBPort     int    `env:"DB_PORT"`
 	DBName     string `env:"DB_NAME"`
-	DBUsername string `env:"DB_USERNAME"`
+	DBUsername string `env:"DB_USER"`
 	DBPassword string `env:"DB_PASSWORD"`
 
 	TokenLength int `env:"TOKEN_LENGTH"`
@@ -22,6 +22,12 @@ type Env struct {
 	GoogleClientID     string `env:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET"`
 	GoogleRedirectUrl  string `enc:"GOOGLE_REDIRECT_URL"`
+
+	EmailUser string `env:"EMAIL_USER"`
+	EmailPass string `env:"EMAIL_PASS"`
+
+	AccessSecret  string `env:"JWT_SECRET"`
+	RefreshSecret string `env:"JWT_REFRESH_SECRET"`
 }
 
 func New() (*Env, error) {
