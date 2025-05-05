@@ -78,7 +78,7 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 			return nil
 		}
 
-		return res.ErrBadRequest("Email already registered")
+		return res.ErrConflict("Email already registered")
 	}
 
 	user = &entity.User{
@@ -150,7 +150,11 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(payload.Password)); err != nil {
-		return "", "", res.ErrBadRequest("Incorrect email or password")
+		return "", "", res.ErrUnauthorized("Incorrect email or password")
+	}
+
+	if !user.Verified {
+		return "", "", res.ErrForbidden("Account not verified")
 	}
 
 	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, payload.RememberMe)
@@ -190,7 +194,7 @@ func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, 
 	}
 
 	if _, err := uc.jwt.VerifyRefreshToken(payload.RefreshToken); err != nil {
-		return "", "", res.ErrUnauthorized("Invalid refresh token")
+		return "", "", res.ErrForbidden("Invalid or expired refresh token")
 	}
 
 	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
