@@ -1,5 +1,5 @@
 run:
-	@docker compose restart
+	@docker compose up
 build:
 	@docker compose down
 	@docker compose up --build
