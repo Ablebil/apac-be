@@ -55,5 +55,5 @@ func Start() error {
 	authUsecase := AuthUsecase.NewAuthUsecase(config, db, r, authRepository, j, e, o)
 	AuthHandler.NewAuthHandler(v1, authUsecase, v)
 
-	return app.Listen(fmt.Sprintf("%s: %d", config.AppHost, config.AppPort))
+	return app.Listen(fmt.Sprintf("%s:%d", config.AppHost, config.AppPort))
 }
