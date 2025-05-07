@@ -28,7 +28,7 @@ func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf
 	routerGroup.Post("/refresh-token", AuthHandler.RefreshToken)
 	routerGroup.Post("/logout", AuthHandler.Logout)
 	routerGroup.Get("/google", AuthHandler.GoogleLogin)
-	routerGroup.Post("/google", AuthHandler.GoogleCallback)
+	routerGroup.Get("/google/callback", AuthHandler.GoogleCallback)
 }
 
 func (h AuthHandler) Register(ctx *fiber.Ctx) error {
@@ -134,15 +134,14 @@ func (h AuthHandler) GoogleLogin(ctx *fiber.Ctx) error {
 		return res.Error(ctx, err)
 	}
 
-	return res.SuccessResponse(ctx, "Google login url returned", fiber.Map{
-		"url": url,
-	})
+	return ctx.Redirect(url, fiber.StatusTemporaryRedirect)
 }
 
 func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
-	payload := new(dto.GoogleCallbackRequest)
-	if err := ctx.BodyParser(&payload); err != nil {
-		return res.BadRequest(ctx)
+	payload := &dto.GoogleCallbackRequest{
+		Code:  ctx.Query("code"),
+		State: ctx.Query("state"),
+		Error: ctx.Query("error"),
 	}
 
 	if err := h.Validator.Struct(payload); err != nil {
