@@ -77,17 +77,17 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 	hashedPassword := string(hashed)
 
 	otp := fmt.Sprintf("%06d", 100000+rand.New(rand.NewSource(time.Now().UnixNano())).Intn(900000))
-	otpExpiresAt := time.Now().Add(5 * time.Minute)
+	expiration := 5 * time.Minute
 
 	if user != nil {
 		if user.GoogleID != nil && user.Password == nil {
 			if err := uc.repo.Update(payload.Email, &entity.User{
-				Password:     &hashedPassword,
-				OTP:          &otp,
-				OTPExpiresAt: &otpExpiresAt,
+				Password: &hashedPassword,
 			}); err != nil {
 				return res.ErrInternalServer("Failed to update user")
 			}
+
+			_ = uc.redis.SetOTP(payload.Email, otp, expiration)
 
 			if err := uc.email.SendOTPEmail(payload.Email, otp); err != nil {
 				return res.ErrInternalServer("Failed to send OTP email")
@@ -99,16 +99,16 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 		return res.ErrConflict("Email already registered")
 	} else {
 		user = &entity.User{
-			Name:         payload.Name,
-			Email:        payload.Email,
-			Password:     &hashedPassword,
-			OTP:          &otp,
-			OTPExpiresAt: &otpExpiresAt,
+			Name:     payload.Name,
+			Email:    payload.Email,
+			Password: &hashedPassword,
 		}
 
 		if err := uc.repo.Create(user); err != nil {
 			return res.ErrInternalServer("Failed to create user")
 		}
+
+		_ = uc.redis.SetOTP(payload.Email, otp, expiration)
 
 		if err := uc.email.SendOTPEmail(payload.Email, otp); err != nil {
 			return res.ErrInternalServer("Failed to send OTP email")
@@ -128,9 +128,12 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 		return "", "", res.ErrNotFound("User not found")
 	}
 
-	if user.OTP == nil || *user.OTP != payload.OTP || time.Now().After(*user.OTPExpiresAt) {
+	storedOtp, err := uc.redis.GetOTP(payload.Email)
+	if err != nil || storedOtp != payload.OTP {
 		return "", "", res.ErrBadRequest("Invalid or expired OTP")
 	}
+
+	_ = uc.redis.DeleteOTP(payload.Email)
 
 	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
 	if err != nil {
@@ -141,11 +144,9 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 		return "", "", res.ErrInternalServer("Failed to add refresh token")
 	}
 
-	if err := uc.repo.Update(payload.Email, &entity.User{
-		OTP:          nil,
-		OTPExpiresAt: nil,
-		Verified:     true,
-	}); err != nil {
+	user.Verified = true
+
+	if err := uc.repo.Update(user.Email, user); err != nil {
 		return "", "", res.ErrInternalServer("Failed to update user")
 	}
 
@@ -186,7 +187,9 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 	}
 
 	if len(refreshTokens) >= 2 {
-		uc.repo.RemoveRefreshToken(refreshTokens[0].Token)
+		if err := uc.repo.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
+			return "", "", res.ErrInternalServer("Failed to remove refresh token")
+		}
 	}
 
 	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
@@ -347,7 +350,9 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 	}
 
 	if len(refreshTokens) >= 2 {
-		uc.repo.RemoveRefreshToken(refreshTokens[0].Token)
+		if err := uc.repo.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
+			return "", "", res.ErrInternalServer("Failed to remove refresh token")
+		}
 	}
 
 	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {

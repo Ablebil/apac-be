@@ -13,6 +13,9 @@ type RedisItf interface {
 	Delete(key string) error
 	Reset() error
 	Close() error
+	SetOTP(email, otp string, exp time.Duration) error
+	GetOTP(email string) (string, error)
+	DeleteOTP(email string) error
 }
 
 type Redis struct {
@@ -53,4 +56,23 @@ func (r *Redis) Reset() error {
 
 func (r *Redis) Close() error {
 	return r.store.Close()
+}
+
+func (r *Redis) SetOTP(email, otp string, exp time.Duration) error {
+	key := "otp:" + email
+	return r.Set(key, []byte(otp), exp)
+}
+
+func (r *Redis) GetOTP(email string) (string, error) {
+	key := "otp:" + email
+	val, err := r.Get(key)
+	if err != nil {
+		return "", err
+	}
+	return string(val), nil
+}
+
+func (r *Redis) DeleteOTP(email string) error {
+	key := "otp:" + email
+	return r.Delete(key)
 }
