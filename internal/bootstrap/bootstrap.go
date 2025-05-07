@@ -4,6 +4,7 @@ import (
 	"apac/internal/domain/env"
 	"apac/internal/infra/email"
 	"apac/internal/infra/fiber"
+	"apac/internal/infra/gemini"
 	"apac/internal/infra/jwt"
 	"apac/internal/infra/oauth"
 	"apac/internal/infra/postgresql"
@@ -11,8 +12,11 @@ import (
 	"fmt"
 
 	AuthHandler "apac/internal/app/auth/interface/rest"
-	AuthRepo "apac/internal/app/auth/repository"
+	AuthRepository "apac/internal/app/auth/repository"
 	AuthUsecase "apac/internal/app/auth/usecase"
+
+	GeminiHandler "apac/internal/app/gemini/interface/rest"
+	GeminiUsecase "apac/internal/app/gemini/usecase"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
@@ -45,15 +49,22 @@ func Start() error {
 	e := email.NewEmail(config)
 	o := oauth.NewOAuth(config)
 	r := redis.NewRedis(config)
+	g, err := gemini.NewGemini(config)
+	if err != nil {
+		return err
+	}
 
 	app := fiber.New(config)
 	app.Get("/metrics", monitor.New())
 	v1 := app.Group("/api/v1")
 
-	authRepository := AuthRepo.NewAuthRepository(db)
+	authRepository := AuthRepository.NewAuthRepository(db)
 
 	authUsecase := AuthUsecase.NewAuthUsecase(config, db, r, authRepository, j, e, o)
 	AuthHandler.NewAuthHandler(v1, authUsecase, v)
+
+	geminiUsecase := GeminiUsecase.NewGeminiUsecase(config, g)
+	GeminiHandler.NewGeminiHandler(v1, geminiUsecase, v)
 
 	return app.Listen(fmt.Sprintf("%s:%d", config.AppHost, config.AppPort))
 }

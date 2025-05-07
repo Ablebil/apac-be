@@ -15,20 +15,20 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf, validator *validator.Validate) {
-	AuthHandler := AuthHandler{
+	authHandler := AuthHandler{
 		Validator:   validator,
 		AuthUsecase: authUsecase,
 	}
 
 	routerGroup = routerGroup.Group("/auth")
-	routerGroup.Post("/register", AuthHandler.Register)
-	routerGroup.Post("/verify-otp", AuthHandler.VerifyOTP)
-	routerGroup.Post("/choose-preference", AuthHandler.ChoosePreference)
-	routerGroup.Post("/login", AuthHandler.Login)
-	routerGroup.Post("/refresh-token", AuthHandler.RefreshToken)
-	routerGroup.Post("/logout", AuthHandler.Logout)
-	routerGroup.Get("/google", AuthHandler.GoogleLogin)
-	routerGroup.Get("/google/callback", AuthHandler.GoogleCallback)
+	routerGroup.Post("/register", authHandler.Register)
+	routerGroup.Post("/verify-otp", authHandler.VerifyOTP)
+	routerGroup.Post("/choose-preference", authHandler.ChoosePreference)
+	routerGroup.Post("/login", authHandler.Login)
+	routerGroup.Post("/refresh-token", authHandler.RefreshToken)
+	routerGroup.Post("/logout", authHandler.Logout)
+	routerGroup.Get("/google", authHandler.GoogleLogin)
+	routerGroup.Get("/google/callback", authHandler.GoogleCallback)
 }
 
 func (h AuthHandler) Register(ctx *fiber.Ctx) error {
@@ -160,7 +160,7 @@ func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
 }
 
 func (h AuthHandler) ChoosePreference(ctx *fiber.Ctx) error {
-	payload := new(dto.ChoosePreferenceResponse)
+	payload := new(dto.ChoosePreferenceRequest)
 	if err := ctx.BodyParser(&payload); err != nil {
 		return res.BadRequest(ctx)
 	}

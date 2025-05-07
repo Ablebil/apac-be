@@ -11,7 +11,7 @@ type VerifyOTPRequest struct {
 	OTP   string `json:"otp" validate:"required,len=6,numeric"`
 }
 
-type ChoosePreferenceResponse struct {
+type ChoosePreferenceRequest struct {
 	Email       string   `json:"email" validate:"required,email"`
 	Preferences []string `json:"preferences" validate:"required"`
 }

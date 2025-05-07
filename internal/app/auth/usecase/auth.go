@@ -30,7 +30,7 @@ type AuthUsecaseItf interface {
 	Logout(*dto.LogoutRequest) *res.Err
 	GoogleLogin() (string, *res.Err)
 	GoogleCallback(*dto.GoogleCallbackRequest) (string, string, *res.Err)
-	ChoosePreference(*dto.ChoosePreferenceResponse) *res.Err
+	ChoosePreference(*dto.ChoosePreferenceRequest) *res.Err
 }
 
 type AuthUsecase struct {
@@ -269,7 +269,7 @@ func (uc *AuthUsecase) GoogleLogin() (string, *res.Err) {
 		state = state[:stateLength]
 	}
 
-	if err := uc.redis.Set(state, []byte(state), uc.env.StateExpiry); err != nil {
+	if err := uc.redis.Set("gstate:"+state, []byte(state), uc.env.StateExpiry); err != nil {
 		return "", res.ErrInternalServer("Failed to save oauth state")
 	}
 
@@ -286,7 +286,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		return "", "", res.ErrInternalServer("Google callback returns with error: " + payload.Error)
 	}
 
-	state, err := uc.redis.Get(payload.State)
+	state, err := uc.redis.Get("gstate:" + payload.State)
 	if err != nil {
 		return "", "", res.ErrUnauthorized("OAuth state not found")
 	}
@@ -295,7 +295,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		return "", "", res.ErrUnauthorized("OAuth state not found")
 	}
 
-	if err := uc.redis.Delete(payload.State); err != nil {
+	if err := uc.redis.Delete("gstate:" + payload.State); err != nil {
 		return "", "", res.ErrInternalServer()
 	}
 
@@ -367,7 +367,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 	return accessToken, refreshToken, nil
 }
 
-func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceResponse) *res.Err {
+func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceRequest) *res.Err {
 	user, err := uc.repo.FindByEmail(payload.Email)
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")
