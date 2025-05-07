@@ -164,11 +164,7 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 		return "", "", res.ErrInternalServer("Failed to find user")
 	}
 
-	if user == nil {
-		return "", "", res.ErrNotFound("User not found")
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(payload.Password)); err != nil {
+	if user == nil || bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(payload.Password)) != nil {
 		return "", "", res.ErrUnauthorized("Incorrect email or password")
 	}
 
@@ -211,11 +207,11 @@ func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, 
 	}
 
 	if user == nil {
-		return "", "", res.ErrNotFound("User not found")
+		return "", "", res.ErrForbidden("Invalid refresh token")
 	}
 
 	if _, err := uc.jwt.VerifyRefreshToken(payload.RefreshToken); err != nil {
-		return "", "", res.ErrForbidden("Invalid or expired refresh token")
+		return "", "", res.ErrForbidden("Expired refresh token")
 	}
 
 	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
@@ -246,7 +242,7 @@ func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
 	}
 
 	if user == nil {
-		return res.ErrNotFound("User not found")
+		return res.ErrForbidden("Invalid refresh token")
 	}
 
 	if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
