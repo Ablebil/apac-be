@@ -4,6 +4,7 @@ import (
 	"apac/internal/app/gemini/usecase"
 	"apac/internal/domain/dto"
 	res "apac/internal/infra/response"
+	"apac/internal/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -12,15 +13,22 @@ import (
 type GeminiHandler struct {
 	Validator     *validator.Validate
 	GeminiUsecase usecase.GeminiUsecaseItf
+	Middleware    middleware.MiddlewareItf
 }
 
-func NewGeminiHandler(routerGroup fiber.Router, geminiUsecase usecase.GeminiUsecaseItf, validator *validator.Validate) {
+func NewGeminiHandler(
+	routerGroup fiber.Router,
+	geminiUsecase usecase.GeminiUsecaseItf,
+	middleware middleware.MiddlewareItf,
+	validator *validator.Validate,
+) {
 	geminiHandler := GeminiHandler{
 		Validator:     validator,
 		GeminiUsecase: geminiUsecase,
+		Middleware:    middleware,
 	}
 
-	routerGroup = routerGroup.Group("/gemini")
+	routerGroup = routerGroup.Group("/gemini", middleware.Authentication)
 	routerGroup.Post("/", geminiHandler.Prompt)
 }
 

@@ -9,6 +9,7 @@ import (
 	"apac/internal/infra/oauth"
 	"apac/internal/infra/postgresql"
 	"apac/internal/infra/redis"
+	"apac/internal/middleware"
 	"fmt"
 
 	AuthHandler "apac/internal/app/auth/interface/rest"
@@ -54,6 +55,8 @@ func Start() error {
 		return err
 	}
 
+	m := middleware.New(j)
+
 	app := fiber.New(config)
 	app.Get("/metrics", monitor.New())
 	v1 := app.Group("/api/v1")
@@ -64,7 +67,7 @@ func Start() error {
 	AuthHandler.NewAuthHandler(v1, authUsecase, v)
 
 	geminiUsecase := GeminiUsecase.NewGeminiUsecase(config, g)
-	GeminiHandler.NewGeminiHandler(v1, geminiUsecase, v)
+	GeminiHandler.NewGeminiHandler(v1, geminiUsecase, m, v)
 
 	return app.Listen(fmt.Sprintf("%s:%d", config.AppHost, config.AppPort))
 }

@@ -4,7 +4,6 @@ import (
 	"apac/internal/domain/env"
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"google.golang.org/genai"
 )
@@ -106,8 +105,6 @@ func (g *Gemini) Prompt(prompt string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(result.Text())
 
 	var response map[string]interface{}
 	err = json.Unmarshal([]byte(result.Text()), &response)
