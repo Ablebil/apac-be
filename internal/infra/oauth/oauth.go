@@ -60,10 +60,10 @@ func (o *OAuth) GetProfile(token *oauth2.Token) (*dto.GoogleProfileResponse, err
 	}
 
 	data := &dto.GoogleProfileResponse{
-		ID: userInfo.Id,
+		ID:       userInfo.Id,
 		Username: strings.Split(userInfo.Email, "@")[0],
-		Email: userInfo.Email,
-		Name: userInfo.Name,
+		Email:    userInfo.Email,
+		Name:     userInfo.Name,
 		Verified: *userInfo.VerifiedEmail,
 	}
 

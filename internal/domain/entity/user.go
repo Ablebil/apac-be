@@ -13,8 +13,6 @@ type User struct {
 	Password     *string        `gorm:"column:password;type:varchar(255)"`
 	Name         string         `gorm:"column:name;type:varchar(255);not null"`
 	GoogleID     *string        `gorm:"column:google_id;type:varchar(255);unique"`
-	OTP          *string        `gorm:"column:otp;type:char(6)"`
-	OTPExpiresAt *time.Time     `gorm:"column:otp_expires_at;type:timestamp"`
 	Verified     bool           `gorm:"column:verified;type:bool;default:false"`
 	Preference   []Preference   `gorm:"constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`
 	RefreshToken []RefreshToken `gorm:"constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`

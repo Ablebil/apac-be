@@ -31,10 +31,9 @@ type LogoutRequest struct {
 }
 
 type GoogleCallbackRequest struct {
-	Code       string `json:"code" validate:"required"`
-	State      string `json:"state" validate:"required"`
-	RememberMe bool   `json:"remember_me"`
-	Error      string `json:"error"`
+	Code  string `json:"code" validate:"required"`
+	State string `json:"state" validate:"required"`
+	Error string `json:"error"`
 }
 
 type GoogleProfileResponse struct {
