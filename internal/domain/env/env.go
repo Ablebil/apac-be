@@ -37,6 +37,9 @@ type Env struct {
 
 	StateLength int           `env:"STATE_LENGTH"`
 	StateExpiry time.Duration `env:"STATE_EXPIRY"`
+
+	GeminiAPIKey string `env:"GEMINI_API_KEY"`
+	GeminiModel  string `env:"GEMINI_MODEL"`
 }
 
 func New() (*Env, error) {
