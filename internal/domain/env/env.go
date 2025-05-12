@@ -43,6 +43,9 @@ type Env struct {
 	SupabaseAnonKey string `env:"SUPABASE_ANON_KEY"`
 
 	DefaultProfilePic string `env:"DEFAULT_PROFILE_PIC"`
+
+	GeminiAPIKey string `env:"GEMINI_API_KEY"`
+	GeminiModel  string `env:"GEMINI_MODEL"`
 }
 
 func New() (*Env, error) {

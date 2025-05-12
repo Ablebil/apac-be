@@ -269,7 +269,7 @@ func (uc *AuthUsecase) GoogleLogin() (string, *res.Err) {
 		state = state[:stateLength]
 	}
 
-	if err := uc.redis.Set(state, []byte(state), uc.env.StateExpiry); err != nil {
+	if err := uc.redis.Set("gstate:"+state, []byte(state), uc.env.StateExpiry); err != nil {
 		return "", res.ErrInternalServer("Failed to save oauth state")
 	}
 
@@ -286,7 +286,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		return "", "", res.ErrInternalServer("Google callback returns with error: " + payload.Error)
 	}
 
-	state, err := uc.redis.Get(payload.State)
+	state, err := uc.redis.Get("gstate:" + payload.State)
 	if err != nil {
 		return "", "", res.ErrUnauthorized("OAuth state not found")
 	}
@@ -295,7 +295,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		return "", "", res.ErrUnauthorized("OAuth state not found")
 	}
 
-	if err := uc.redis.Delete(payload.State); err != nil {
+	if err := uc.redis.Delete("gstate:" + payload.State); err != nil {
 		return "", "", res.ErrInternalServer()
 	}
 
