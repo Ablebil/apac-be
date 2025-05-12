@@ -37,6 +37,12 @@ type Env struct {
 
 	StateLength int           `env:"STATE_LENGTH"`
 	StateExpiry time.Duration `env:"STATE_EXPIRY"`
+
+	SupabaseBucket  string `env:"SUPABASE_BUCKET"`
+	SupabaseUrl     string `env:"SUPABASE_URL"`
+	SupabaseAnonKey string `env:"SUPABASE_ANON_KEY"`
+
+	DefaultProfilePic string `env:"DEFAULT_PROFILE_PIC"`
 }
 
 func New() (*Env, error) {
