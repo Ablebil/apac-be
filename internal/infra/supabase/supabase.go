@@ -21,7 +21,7 @@ type Supabase struct {
 }
 
 func NewSupabase(env *env.Env) SupabaseItf {
-	storageClient := supabase.CreateClient(fmt.Sprintf("%s", env.SupabaseUrl), env.SupabaseAnonKey)
+	storageClient := supabase.CreateClient(env.SupabaseUrl, env.SupabaseAnonKey)
 
 	return &Supabase{
 		Client: *storageClient,
