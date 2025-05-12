@@ -4,11 +4,13 @@ import (
 	"apac/internal/domain/env"
 	"apac/internal/infra/email"
 	"apac/internal/infra/fiber"
+	"apac/internal/infra/helper"
 	"apac/internal/infra/gemini"
 	"apac/internal/infra/jwt"
 	"apac/internal/infra/oauth"
 	"apac/internal/infra/postgresql"
 	"apac/internal/infra/redis"
+	"apac/internal/infra/supabase"
 	"apac/internal/middleware"
 	"fmt"
 
@@ -16,6 +18,10 @@ import (
 	AuthRepository "apac/internal/app/auth/repository"
 	AuthUsecase "apac/internal/app/auth/usecase"
 
+	UserHandler "apac/internal/app/user/interface/rest"
+	UserRepo "apac/internal/app/user/repository"
+	UserUsecase "apac/internal/app/user/usecase"
+  
 	GeminiHandler "apac/internal/app/gemini/interface/rest"
 	GeminiUsecase "apac/internal/app/gemini/usecase"
 
@@ -50,12 +56,13 @@ func Start() error {
 	e := email.NewEmail(config)
 	o := oauth.NewOAuth(config)
 	r := redis.NewRedis(config)
+	s := supabase.NewSupabase(config)
+	h := helper.NewHelper(config)
+	m := middleware.NewMiddleware(j)
 	g, err := gemini.NewGemini(config)
 	if err != nil {
 		return err
 	}
-
-	m := middleware.New(j)
 
 	app := fiber.New(config)
 	app.Get("/metrics", monitor.New())
@@ -63,8 +70,13 @@ func Start() error {
 
 	authRepository := AuthRepository.NewAuthRepository(db)
 
-	authUsecase := AuthUsecase.NewAuthUsecase(config, db, r, authRepository, j, e, o)
+	userRepository := UserRepo.NewUserRepository(db)
+
+	authUsecase := AuthUsecase.NewAuthUsecase(config, db, r, authRepository, userRepository, j, e, o)
 	AuthHandler.NewAuthHandler(v1, authUsecase, v)
+
+	userUsecase := UserUsecase.NewUserUsecase(config, userRepository, s, h)
+	UserHandler.NewUserHandler(v1, userUsecase, v, m, h)
 
 	geminiUsecase := GeminiUsecase.NewGeminiUsecase(config, g)
 	GeminiHandler.NewGeminiHandler(v1, geminiUsecase, m, v)

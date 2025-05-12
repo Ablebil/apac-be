@@ -52,6 +52,14 @@ func ErrConflict(message ...string) *Err {
 	return newError(fiber.ErrConflict.Code, fiber.ErrConflict.Message, message...)
 }
 
+func ErrUnprocessableEntity(message ...string) *Err {
+	return newError(fiber.ErrUnprocessableEntity.Code, fiber.ErrUnprocessableEntity.Message, message...)
+}
+
+func ErrEntityTooLarge(message ...string) *Err {
+	return newError(fiber.ErrRequestEntityTooLarge.Code, fiber.ErrRequestEntityTooLarge.Message, message...)
+}
+
 func respondWithError(ctx *fiber.Ctx, code int, defaultMsg string, message ...string) error {
 	msg := defaultMsg
 	if len(message) == 1 {

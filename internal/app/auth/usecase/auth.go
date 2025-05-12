@@ -1,7 +1,8 @@
 package usecase
 
 import (
-	"apac/internal/app/auth/repository"
+	authRepository "apac/internal/app/auth/repository"
+	userRepository "apac/internal/app/user/repository"
 	"apac/internal/domain/dto"
 	"apac/internal/domain/entity"
 	"apac/internal/domain/env"
@@ -23,48 +24,51 @@ import (
 )
 
 type AuthUsecaseItf interface {
-	Register(*dto.RegisterRequest) *res.Err
-	VerifyOTP(*dto.VerifyOTPRequest) (string, string, *res.Err)
-	Login(*dto.LoginRequest) (string, string, *res.Err)
-	RefreshToken(*dto.RefreshToken) (string, string, *res.Err)
-	Logout(*dto.LogoutRequest) *res.Err
+	Register(payload *dto.RegisterRequest) *res.Err
+	VerifyOTP(payload *dto.VerifyOTPRequest) (string, string, *res.Err)
+	Login(payload *dto.LoginRequest) (string, string, *res.Err)
+	RefreshToken(payload *dto.RefreshToken) (string, string, *res.Err)
+	Logout(payload *dto.LogoutRequest) *res.Err
 	GoogleLogin() (string, *res.Err)
-	GoogleCallback(*dto.GoogleCallbackRequest) (string, string, *res.Err)
-	ChoosePreference(*dto.ChoosePreferenceRequest) *res.Err
+	GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, *res.Err)
+	ChoosePreference(payload *dto.ChoosePreferenceResponse) *res.Err
 }
 
 type AuthUsecase struct {
-	repo  repository.AuthRepositoryItf
-	jwt   jwt.JWTItf
-	db    *gorm.DB
-	redis redis.RedisItf
-	email email.EmailItf
-	env   *env.Env
-	oauth oauth.OAuthItf
+	authRepository authRepository.AuthRepositoryItf
+	userRepository userRepository.UserRepositoryItf
+	jwt            jwt.JWTItf
+	db             *gorm.DB
+	redis          redis.RedisItf
+	email          email.EmailItf
+	env            *env.Env
+	oauth          oauth.OAuthItf
 }
 
 func NewAuthUsecase(
 	env *env.Env,
 	db *gorm.DB,
 	redis redis.RedisItf,
-	authRepository repository.AuthRepositoryItf,
+	authRepository authRepository.AuthRepositoryItf,
+	userRepository userRepository.UserRepositoryItf,
 	jwt jwt.JWTItf,
 	email email.EmailItf,
 	oauth oauth.OAuthItf,
 ) AuthUsecaseItf {
 	return &AuthUsecase{
-		repo:  authRepository,
-		jwt:   jwt,
-		redis: redis,
-		db:    db,
-		email: email,
-		env:   env,
-		oauth: oauth,
+		authRepository: authRepository,
+		userRepository: userRepository,
+		jwt:            jwt,
+		redis:          redis,
+		db:             db,
+		email:          email,
+		env:            env,
+		oauth:          oauth,
 	}
 }
 
 func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
-	user, err := uc.repo.FindByEmail(payload.Email)
+	user, err := uc.authRepository.FindByEmail(payload.Email)
 
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")
@@ -81,7 +85,7 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 
 	if user != nil {
 		if user.GoogleID != nil && user.Password == nil {
-			if err := uc.repo.Update(payload.Email, &entity.User{
+			if err := uc.authRepository.Update(payload.Email, &entity.User{
 				Password: &hashedPassword,
 			}); err != nil {
 				return res.ErrInternalServer("Failed to update user")
@@ -104,7 +108,7 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 			Password: &hashedPassword,
 		}
 
-		if err := uc.repo.Create(user); err != nil {
+		if err := uc.authRepository.Create(user); err != nil {
 			return res.ErrInternalServer("Failed to create user")
 		}
 
@@ -119,7 +123,7 @@ func (uc *AuthUsecase) Register(payload *dto.RegisterRequest) *res.Err {
 }
 
 func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string, *res.Err) {
-	user, err := uc.repo.FindByEmail(payload.Email)
+	user, err := uc.authRepository.FindByEmail(payload.Email)
 	if err != nil {
 		return "", "", res.ErrInternalServer("Failed to find user")
 	}
@@ -140,13 +144,13 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 		return "", "", res.ErrInternalServer("Failed to generate refresh token")
 	}
 
-	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+	if err := uc.authRepository.AddRefreshToken(user.ID, refreshToken); err != nil {
 		return "", "", res.ErrInternalServer("Failed to add refresh token")
 	}
 
 	user.Verified = true
 
-	if err := uc.repo.Update(user.Email, user); err != nil {
+	if err := uc.authRepository.Update(user.Email, user); err != nil {
 		return "", "", res.ErrInternalServer("Failed to update user")
 	}
 
@@ -159,7 +163,7 @@ func (uc *AuthUsecase) VerifyOTP(payload *dto.VerifyOTPRequest) (string, string,
 }
 
 func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Err) {
-	user, err := uc.repo.FindByEmail(payload.Email)
+	user, err := uc.authRepository.FindByEmail(payload.Email)
 	if err != nil {
 		return "", "", res.ErrInternalServer("Failed to find user")
 	}
@@ -177,18 +181,18 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 		return "", "", res.ErrInternalServer("Failed to generate refresh token")
 	}
 
-	refreshTokens, err := uc.repo.GetUserRefreshTokens(user.ID)
+	refreshTokens, err := uc.authRepository.GetUserRefreshTokens(user.ID)
 	if err != nil {
 		return "", "", res.ErrInternalServer("Failed to get refresh tokens")
 	}
 
 	if len(refreshTokens) >= 2 {
-		if err := uc.repo.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
+		if err := uc.authRepository.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
 			return "", "", res.ErrInternalServer("Failed to remove refresh token")
 		}
 	}
 
-	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+	if err := uc.authRepository.AddRefreshToken(user.ID, refreshToken); err != nil {
 		return "", "", res.ErrInternalServer("Failed to add refresh token")
 	}
 
@@ -201,7 +205,7 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 }
 
 func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, *res.Err) {
-	user, err := uc.repo.FindByRefreshToken(payload.RefreshToken)
+	user, err := uc.authRepository.FindByRefreshToken(payload.RefreshToken)
 	if err != nil {
 		return "", "", res.ErrInternalServer("Failed to find user")
 	}
@@ -219,11 +223,11 @@ func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, 
 		return "", "", res.ErrInternalServer("Failed to generate refresh token")
 	}
 
-	if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
+	if err := uc.authRepository.RemoveRefreshToken(payload.RefreshToken); err != nil {
 		return "", "", res.ErrInternalServer("Failed to remove refresh token")
 	}
 
-	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+	if err := uc.authRepository.AddRefreshToken(user.ID, refreshToken); err != nil {
 		return "", "", res.ErrInternalServer("Failed to add refresh token")
 	}
 
@@ -236,7 +240,7 @@ func (uc *AuthUsecase) RefreshToken(payload *dto.RefreshToken) (string, string, 
 }
 
 func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
-	user, err := uc.repo.FindByRefreshToken(payload.RefreshToken)
+	user, err := uc.authRepository.FindByRefreshToken(payload.RefreshToken)
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")
 	}
@@ -245,7 +249,7 @@ func (uc *AuthUsecase) Logout(payload *dto.LogoutRequest) *res.Err {
 		return res.ErrForbidden("Invalid refresh token")
 	}
 
-	if err := uc.repo.RemoveRefreshToken(payload.RefreshToken); err != nil {
+	if err := uc.authRepository.RemoveRefreshToken(payload.RefreshToken); err != nil {
 		return res.ErrInternalServer("Failed to remove refresh token")
 	}
 
@@ -305,14 +309,14 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		return "", "", res.ErrInternalServer(err.Error())
 	}
 
-	user, err := uc.repo.FindByEmail(profile.Email)
+	user, err := uc.authRepository.FindByEmail(profile.Email)
 	if err != nil {
 		return "", "", res.ErrInternalServer("Failed to find user")
 	}
 
 	if user != nil {
 		if user.GoogleID == nil {
-			if err := uc.repo.Update(user.Email, &entity.User{
+			if err := uc.authRepository.Update(user.Email, &entity.User{
 				GoogleID: &profile.ID,
 			}); err != nil {
 				return "", "", res.ErrInternalServer("Failed to update user")
@@ -326,7 +330,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 			Verified: profile.Verified,
 		}
 
-		if err := uc.repo.Create(user); err != nil {
+		if err := uc.authRepository.Create(user); err != nil {
 			return "", "", res.ErrInternalServer("Failed to create user")
 		}
 	}
@@ -340,18 +344,18 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		return "", "", res.ErrInternalServer("Failed to generate refresh token")
 	}
 
-	refreshTokens, err := uc.repo.GetUserRefreshTokens(user.ID)
+	refreshTokens, err := uc.authRepository.GetUserRefreshTokens(user.ID)
 	if err != nil {
 		return "", "", res.ErrInternalServer("Failed to get refresh tokens")
 	}
 
 	if len(refreshTokens) >= 2 {
-		if err := uc.repo.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
+		if err := uc.authRepository.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
 			return "", "", res.ErrInternalServer("Failed to remove refresh token")
 		}
 	}
 
-	if err := uc.repo.AddRefreshToken(user.ID, refreshToken); err != nil {
+	if err := uc.authRepository.AddRefreshToken(user.ID, refreshToken); err != nil {
 		return "", "", res.ErrInternalServer("Failed to add refresh token")
 	}
 
@@ -363,8 +367,8 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 	return accessToken, refreshToken, nil
 }
 
-func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceRequest) *res.Err {
-	user, err := uc.repo.FindByEmail(payload.Email)
+func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceResponse) *res.Err {
+	user, err := uc.authRepository.FindByEmail(payload.Email)
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")
 	}
@@ -375,7 +379,7 @@ func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceRequest) *r
 
 	if payload.Preferences != nil {
 		for _, pref := range payload.Preferences {
-			if err := uc.repo.AddPreference(user.ID, pref); err != nil {
+			if err := uc.userRepository.AddPreference(user.ID, pref); err != nil {
 				return res.ErrInternalServer("Failed to add preference")
 			}
 		}
