@@ -3,7 +3,10 @@ package rest
 import (
 	"apac/internal/app/auth/usecase"
 	"apac/internal/domain/dto"
+	"apac/internal/domain/env"
 	res "apac/internal/infra/response"
+	"fmt"
+	"net/url"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -12,12 +15,14 @@ import (
 type AuthHandler struct {
 	Validator   *validator.Validate
 	AuthUsecase usecase.AuthUsecaseItf
+	env         *env.Env
 }
 
-func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf, validator *validator.Validate) {
+func NewAuthHandler(routerGroup fiber.Router, authUsecase usecase.AuthUsecaseItf, env *env.Env, validator *validator.Validate) {
 	authHandler := AuthHandler{
 		Validator:   validator,
 		AuthUsecase: authUsecase,
+		env:         env,
 	}
 
 	routerGroup = routerGroup.Group("/auth")
@@ -148,15 +153,18 @@ func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
 		return res.ValidationError(ctx, err)
 	}
 
-	accessToken, refreshToken, err := h.AuthUsecase.GoogleCallback(payload)
+	accessToken, refreshToken, isNewUser, err := h.AuthUsecase.GoogleCallback(payload)
 	if err != nil {
 		return res.Error(ctx, err)
 	}
 
-	return res.SuccessResponse(ctx, "Token refreshed", fiber.Map{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
+	redirectUrl := fmt.Sprintf("%s#access_token=%s&refresh_token=%s&is_new_user=%t",
+		h.env.FeRedirectUrl,
+		url.QueryEscape(accessToken),
+		url.QueryEscape(refreshToken),
+		isNewUser)
+
+	return ctx.Redirect(redirectUrl, fiber.StatusTemporaryRedirect)
 }
 
 func (h AuthHandler) ChoosePreference(ctx *fiber.Ctx) error {

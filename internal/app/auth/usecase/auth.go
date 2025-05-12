@@ -30,7 +30,7 @@ type AuthUsecaseItf interface {
 	RefreshToken(payload *dto.RefreshToken) (string, string, *res.Err)
 	Logout(payload *dto.LogoutRequest) *res.Err
 	GoogleLogin() (string, *res.Err)
-	GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, *res.Err)
+	GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, bool, *res.Err)
 	ChoosePreference(payload *dto.ChoosePreferenceRequest) *res.Err
 }
 
@@ -281,37 +281,39 @@ func (uc *AuthUsecase) GoogleLogin() (string, *res.Err) {
 	return url, nil
 }
 
-func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, *res.Err) {
+func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, bool, *res.Err) {
 	if payload.Error != "" {
-		return "", "", res.ErrInternalServer("Google callback returns with error: " + payload.Error)
+		return "", "", false, res.ErrInternalServer("Google callback returns with error: " + payload.Error)
 	}
 
 	state, err := uc.redis.Get("gstate:" + payload.State)
 	if err != nil {
-		return "", "", res.ErrUnauthorized("OAuth state not found")
+		return "", "", false, res.ErrUnauthorized("OAuth state not found")
 	}
 
 	if string(state) != payload.State {
-		return "", "", res.ErrUnauthorized("OAuth state not found")
+		return "", "", false, res.ErrUnauthorized("OAuth state not found")
 	}
 
 	if err := uc.redis.Delete("gstate:" + payload.State); err != nil {
-		return "", "", res.ErrInternalServer()
+		return "", "", false, res.ErrInternalServer()
 	}
 
 	token, err := uc.oauth.ExchangeToken(payload.Code)
 	if err != nil {
-		return "", "", res.ErrInternalServer(err.Error())
+		return "", "", false, res.ErrInternalServer(err.Error())
 	}
 
 	profile, err := uc.oauth.GetProfile(token)
 	if err != nil {
-		return "", "", res.ErrInternalServer(err.Error())
+		return "", "", false, res.ErrInternalServer(err.Error())
 	}
+
+	isNewUser := false
 
 	user, err := uc.authRepository.FindByEmail(profile.Email)
 	if err != nil {
-		return "", "", res.ErrInternalServer("Failed to find user")
+		return "", "", false, res.ErrInternalServer("Failed to find user")
 	}
 
 	if user != nil {
@@ -319,10 +321,12 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 			if err := uc.authRepository.Update(user.Email, &entity.User{
 				GoogleID: &profile.ID,
 			}); err != nil {
-				return "", "", res.ErrInternalServer("Failed to update user")
+				return "", "", false, res.ErrInternalServer("Failed to update user")
 			}
 		}
 	} else {
+		isNewUser = true
+
 		user = &entity.User{
 			Email:    profile.Email,
 			Name:     profile.Name,
@@ -331,40 +335,40 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 		}
 
 		if err := uc.authRepository.Create(user); err != nil {
-			return "", "", res.ErrInternalServer("Failed to create user")
+			return "", "", false, res.ErrInternalServer("Failed to create user")
 		}
 	}
 
 	if !user.Verified {
-		return "", "", res.ErrForbidden("Account not verified")
+		return "", "", false, res.ErrForbidden("Account not verified")
 	}
 
 	refreshToken, err := uc.jwt.GenerateRefreshToken(user.ID, false)
 	if err != nil {
-		return "", "", res.ErrInternalServer("Failed to generate refresh token")
+		return "", "", false, res.ErrInternalServer("Failed to generate refresh token")
 	}
 
 	refreshTokens, err := uc.authRepository.GetUserRefreshTokens(user.ID)
 	if err != nil {
-		return "", "", res.ErrInternalServer("Failed to get refresh tokens")
+		return "", "", false, res.ErrInternalServer("Failed to get refresh tokens")
 	}
 
 	if len(refreshTokens) >= 2 {
 		if err := uc.authRepository.RemoveRefreshToken(refreshTokens[0].Token); err != nil {
-			return "", "", res.ErrInternalServer("Failed to remove refresh token")
+			return "", "", false, res.ErrInternalServer("Failed to remove refresh token")
 		}
 	}
 
 	if err := uc.authRepository.AddRefreshToken(user.ID, refreshToken); err != nil {
-		return "", "", res.ErrInternalServer("Failed to add refresh token")
+		return "", "", false, res.ErrInternalServer("Failed to add refresh token")
 	}
 
 	accessToken, err := uc.jwt.GenerateAccessToken(user.ID, user.Name, user.Email)
 	if err != nil {
-		return "", "", res.ErrInternalServer("Failed to generate access token")
+		return "", "", false, res.ErrInternalServer("Failed to generate access token")
 	}
 
-	return accessToken, refreshToken, nil
+	return accessToken, refreshToken, isNewUser, nil
 }
 
 func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceRequest) *res.Err {

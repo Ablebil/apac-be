@@ -73,7 +73,7 @@ func Start() error {
 	userRepository := UserRepo.NewUserRepository(db)
 
 	authUsecase := AuthUsecase.NewAuthUsecase(config, db, r, authRepository, userRepository, j, e, o)
-	AuthHandler.NewAuthHandler(v1, authUsecase, v)
+	AuthHandler.NewAuthHandler(v1, authUsecase, config, v)
 
 	userUsecase := UserUsecase.NewUserUsecase(config, userRepository, s, h)
 	UserHandler.NewUserHandler(v1, userUsecase, v, m, h)
