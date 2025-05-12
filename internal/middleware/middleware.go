@@ -14,7 +14,7 @@ type Middleware struct {
 	jwt jwt.JWTItf
 }
 
-func New(jwt jwt.JWTItf) MiddlewareItf {
+func NewMiddleware(jwt jwt.JWTItf) MiddlewareItf {
 	return &Middleware{
 		jwt: jwt,
 	}

@@ -4,8 +4,8 @@ import (
 	"apac/internal/domain/env"
 	"apac/internal/infra/email"
 	"apac/internal/infra/fiber"
-	"apac/internal/infra/helper"
 	"apac/internal/infra/gemini"
+	"apac/internal/infra/helper"
 	"apac/internal/infra/jwt"
 	"apac/internal/infra/oauth"
 	"apac/internal/infra/postgresql"
@@ -21,7 +21,7 @@ import (
 	UserHandler "apac/internal/app/user/interface/rest"
 	UserRepo "apac/internal/app/user/repository"
 	UserUsecase "apac/internal/app/user/usecase"
-  
+
 	GeminiHandler "apac/internal/app/gemini/interface/rest"
 	GeminiUsecase "apac/internal/app/gemini/usecase"
 

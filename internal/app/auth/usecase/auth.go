@@ -31,7 +31,7 @@ type AuthUsecaseItf interface {
 	Logout(payload *dto.LogoutRequest) *res.Err
 	GoogleLogin() (string, *res.Err)
 	GoogleCallback(payload *dto.GoogleCallbackRequest) (string, string, *res.Err)
-	ChoosePreference(payload *dto.ChoosePreferenceResponse) *res.Err
+	ChoosePreference(payload *dto.ChoosePreferenceRequest) *res.Err
 }
 
 type AuthUsecase struct {
@@ -367,7 +367,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 	return accessToken, refreshToken, nil
 }
 
-func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceResponse) *res.Err {
+func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceRequest) *res.Err {
 	user, err := uc.authRepository.FindByEmail(payload.Email)
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")
