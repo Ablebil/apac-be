@@ -16,7 +16,6 @@ type AuthRepositoryItf interface {
 	GetUserRefreshTokens(userId uuid.UUID) ([]entity.RefreshToken, error)
 	RemoveRefreshToken(token string) error
 	FindByRefreshToken(token string) (*entity.User, error)
-	AddPreference(userId uuid.UUID, preference string) error
 }
 
 type AuthRepository struct {
@@ -82,11 +81,4 @@ func (r *AuthRepository) FindByRefreshToken(token string) (*entity.User, error) 
 	}
 
 	return refreshToken.User, nil
-}
-
-func (r *AuthRepository) AddPreference(userId uuid.UUID, preference string) error {
-	return r.db.Create(&entity.Preference{
-		UserID: userId,
-		Name:   preference,
-	}).Error
 }

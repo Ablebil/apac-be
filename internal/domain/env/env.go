@@ -27,7 +27,7 @@ type Env struct {
 	GoogleClientID     string `env:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET"`
 	GoogleRedirectUrl  string `env:"GOOGLE_REDIRECT_URL"`
-	RedirectUrl        string `enc:"REDIRECT_URL"`
+	FeRedirectUrl      string `enc:"FE_REDIRECT_URL"`
 
 	EmailUser string `env:"EMAIL_USER"`
 	EmailPass string `env:"EMAIL_PASS"`
@@ -37,6 +37,12 @@ type Env struct {
 
 	StateLength int           `env:"STATE_LENGTH"`
 	StateExpiry time.Duration `env:"STATE_EXPIRY"`
+
+	SupabaseBucket  string `env:"SUPABASE_BUCKET"`
+	SupabaseUrl     string `env:"SUPABASE_URL"`
+	SupabaseAnonKey string `env:"SUPABASE_ANON_KEY"`
+
+	DefaultProfilePic string `env:"DEFAULT_PROFILE_PIC"`
 
 	GeminiAPIKey string `env:"GEMINI_API_KEY"`
 	GeminiModel  string `env:"GEMINI_MODEL"`
