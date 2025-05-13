@@ -26,7 +26,7 @@ func NewGeminiUsecase(env *env.Env, gemini gemini.GeminiItf) GeminiUsecaseItf {
 func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest) (map[string]interface{}, *res.Err) {
 	response, err := uc.gemini.Prompt(payload.Text)
 	if err != nil {
-		return nil, res.ErrInternalServer("AI prompting failed")
+		return nil, res.ErrInternalServer("AI prompting failed: " + err.Error())
 	}
 
 	return response, nil

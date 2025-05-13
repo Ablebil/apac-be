@@ -48,6 +48,7 @@ COPY --from=builder /app/server /app/server
 
 COPY .env .env
 
+# Exposing port 8000
 EXPOSE 8000
 
 # Run the web service on container startup.
