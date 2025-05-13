@@ -29,7 +29,7 @@ func NewUserHandler(routerGroup fiber.Router, userUsecase usecase.UserUsecaseItf
 	routerGroup.Get("/profile", m.Authentication, UserHandler.GetProfile)
 	routerGroup.Patch("/profile", m.Authentication, UserHandler.EditProfile)
 	routerGroup.Post("/preferences", m.Authentication, UserHandler.AddPreference)
-	routerGroup.Delete("/preferences", m.Authentication, UserHandler.RemovePreference)
+	routerGroup.Delete("/preferences/:name", m.Authentication, UserHandler.RemovePreference)
 }
 
 func (h UserHandler) GetProfile(ctx *fiber.Ctx) error {
@@ -83,18 +83,14 @@ func (h UserHandler) AddPreference(ctx *fiber.Ctx) error {
 }
 
 func (h UserHandler) RemovePreference(ctx *fiber.Ctx) error {
-	payload := new(dto.RemovePreferenceRequest)
-	if err := ctx.BodyParser(&payload); err != nil {
-		return res.BadRequest(ctx)
-	}
-
-	if err := h.Validator.Struct(payload); err != nil {
-		return res.ValidationError(ctx, err)
+	preferenceName := ctx.Params("name")
+	if preferenceName == "" {
+		return res.BadRequest(ctx, "Preference name is reuqired")
 	}
 
 	userId := ctx.Locals("userID").(uuid.UUID)
 
-	if err := h.UserUsecase.RemovePreference(userId, payload); err != nil {
+	if err := h.UserUsecase.RemovePreference(userId, preferenceName); err != nil {
 		return res.Error(ctx, err)
 	}
 

@@ -168,7 +168,11 @@ func (uc *AuthUsecase) Login(payload *dto.LoginRequest) (string, string, *res.Er
 		return "", "", res.ErrInternalServer("Failed to find user")
 	}
 
-	if user == nil || bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(payload.Password)) != nil {
+	if user == nil {
+		return "", "", res.ErrUnauthorized("Incorrect email or password")
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(payload.Password)) != nil {
 		return "", "", res.ErrUnauthorized("Incorrect email or password")
 	}
 
