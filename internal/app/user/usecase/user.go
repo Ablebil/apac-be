@@ -17,7 +17,7 @@ type UserUsecaseItf interface {
 	GetProfile(userId uuid.UUID) (*dto.GetProfileResponse, *res.Err)
 	EditProfile(userId uuid.UUID, payload *dto.EditProfileRequest) *res.Err
 	AddPreference(userId uuid.UUID, payload *dto.AddPreferenceRequest) *res.Err
-	RemovePreference(userId uuid.UUID, payload *dto.RemovePreferenceRequest) *res.Err
+	RemovePreference(userId uuid.UUID, preferenceName string) *res.Err
 }
 
 type UserUsecase struct {
@@ -141,7 +141,7 @@ func (uc *UserUsecase) AddPreference(userId uuid.UUID, payload *dto.AddPreferenc
 	return nil
 }
 
-func (uc *UserUsecase) RemovePreference(userId uuid.UUID, payload *dto.RemovePreferenceRequest) *res.Err {
+func (uc *UserUsecase) RemovePreference(userId uuid.UUID, preferenceName string) *res.Err {
 	user, err := uc.userRepository.FindById(userId)
 	if err != nil {
 		return res.ErrInternalServer("Failed to find user")
@@ -151,7 +151,7 @@ func (uc *UserUsecase) RemovePreference(userId uuid.UUID, payload *dto.RemovePre
 		return res.ErrNotFound("User not found")
 	}
 
-	if err := uc.userRepository.RemovePreference(userId, payload.Preference); err != nil {
+	if err := uc.userRepository.RemovePreference(userId, preferenceName); err != nil {
 		return res.ErrInternalServer("Failed to remove preference")
 	}
 

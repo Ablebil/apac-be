@@ -19,7 +19,3 @@ type EditProfileRequest struct {
 type AddPreferenceRequest struct {
 	Preferences []string `json:"preferences" validate:"required"`
 }
-
-type RemovePreferenceRequest struct {
-	Preference string `json:"preference" validate:"required"`
-}
