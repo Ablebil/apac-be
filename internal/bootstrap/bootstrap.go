@@ -68,7 +68,7 @@ func Start() error {
 	app.Get("/metrics", monitor.New())
 	v1 := app.Group("/api/v1")
 
-	authRepository := AuthRepository.NewAuthRepository(db)
+	authRepository := AuthRepository.NewAuthRepository(db, config)
 
 	userRepository := UserRepo.NewUserRepository(db)
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"apac/internal/domain/entity"
+	"apac/internal/domain/env"
 	"errors"
 
 	"github.com/google/uuid"
@@ -19,11 +20,12 @@ type AuthRepositoryItf interface {
 }
 
 type AuthRepository struct {
-	db *gorm.DB
+	db  *gorm.DB
+	env *env.Env
 }
 
-func NewAuthRepository(db *gorm.DB) AuthRepositoryItf {
-	return &AuthRepository{db}
+func NewAuthRepository(db *gorm.DB, env *env.Env) AuthRepositoryItf {
+	return &AuthRepository{db, env}
 }
 
 func (r *AuthRepository) FindByEmail(email string) (*entity.User, error) {
@@ -42,6 +44,7 @@ func (r *AuthRepository) FindByEmail(email string) (*entity.User, error) {
 }
 
 func (r *AuthRepository) Create(user *entity.User) error {
+	user.PhotoURL = r.env.DefaultProfilePic
 	return r.db.Create(user).Error
 }
 
