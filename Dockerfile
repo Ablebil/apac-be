@@ -47,6 +47,7 @@ RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -
 COPY --from=builder /app/server /app/server
 
 COPY .env .env
+COPY resource resource
 
 # Exposing port 8000
 EXPOSE 8000

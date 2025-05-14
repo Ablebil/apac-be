@@ -35,6 +35,26 @@ func (r *UserRepository) FindById(userId uuid.UUID) (*entity.User, error) {
 		return nil, err
 	}
 
+	err = r.db.Preload("User").Where("user_id = ?", userId).Find(&user.Preference).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.Preload("User").Where("user_id = ?", userId).Find(&user.RefreshToken).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &user, nil
 }
 
