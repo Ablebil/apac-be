@@ -296,7 +296,7 @@ func (uc *AuthUsecase) GoogleCallback(payload *dto.GoogleCallbackRequest) (strin
 	}
 
 	if string(state) != payload.State {
-		return "", "", false, res.ErrUnauthorized("OAuth state not found")
+		return "", "", false, res.ErrUnauthorized("OAuth state invalid")
 	}
 
 	if err := uc.redis.Delete("gstate:" + payload.State); err != nil {

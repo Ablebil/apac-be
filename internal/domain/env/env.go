@@ -27,7 +27,7 @@ type Env struct {
 	GoogleClientID     string `env:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET"`
 	GoogleRedirectUrl  string `env:"GOOGLE_REDIRECT_URL"`
-	FeRedirectUrl      string `enc:"FE_REDIRECT_URL"`
+	FeRedirectUrl      string `env:"FE_REDIRECT_URL"`
 
 	EmailUser string `env:"EMAIL_USER"`
 	EmailPass string `env:"EMAIL_PASS"`

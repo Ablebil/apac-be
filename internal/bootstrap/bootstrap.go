@@ -68,7 +68,7 @@ func Start() error {
 	app.Get("/metrics", monitor.New())
 	v1 := app.Group("/api/v1")
 
-	authRepository := AuthRepository.NewAuthRepository(db)
+	authRepository := AuthRepository.NewAuthRepository(db, config)
 
 	userRepository := UserRepo.NewUserRepository(db)
 
@@ -78,7 +78,7 @@ func Start() error {
 	userUsecase := UserUsecase.NewUserUsecase(config, userRepository, s, h)
 	UserHandler.NewUserHandler(v1, userUsecase, v, m, h)
 
-	geminiUsecase := GeminiUsecase.NewGeminiUsecase(config, g)
+	geminiUsecase := GeminiUsecase.NewGeminiUsecase(config, g, userRepository)
 	GeminiHandler.NewGeminiHandler(v1, geminiUsecase, m, v)
 
 	return app.Listen(fmt.Sprintf("%s:%d", config.AppHost, config.AppPort))

@@ -16,8 +16,8 @@ type User struct {
 	GoogleID     *string        `gorm:"column:google_id;type:varchar(255);unique"`
 	Verified     bool           `gorm:"column:verified;type:bool;default:false"`
 	PhotoURL     string         `gorm:"column:photo_url;type:varchar(255);not null"`
-	Preference   []Preference   `gorm:"constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`
-	RefreshToken []RefreshToken `gorm:"constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`
+	Preference   []Preference   `gorm:"foreignKey:user_id;constraint:OnDelete:SET NULL;"`
+	RefreshToken []RefreshToken `gorm:"foreignKey:user_id;constraint:OnUpdate:SET NULL,OnDelete:SET NULL;"`
 	CreatedAt    *time.Time     `gorm:"column:created_at;type:timestamp;autoCreateTime"`
 	UpdatedAt    *time.Time     `gorm:"column:updated_at;type:timestamp;autoUpdateTime"`
 }
