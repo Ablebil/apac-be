@@ -4,12 +4,13 @@ import (
 	"apac/internal/domain/env"
 	"context"
 	"encoding/json"
+	"os"
 
 	"google.golang.org/genai"
 )
 
 type GeminiItf interface {
-	Prompt(string) (map[string]interface{}, error)
+	Prompt([]string, string) (map[string]interface{}, error)
 }
 
 type Gemini struct {
@@ -18,67 +19,16 @@ type Gemini struct {
 	model  string
 }
 
-var responseSchema = &genai.Schema{
-	Type: genai.TypeObject,
-	Properties: map[string]*genai.Schema{
-		"trip_name": {
-			Type: genai.TypeString,
-		},
-		"days": {
-			Type: genai.TypeArray,
-			Items: &genai.Schema{
-				Type: genai.TypeObject,
-				Properties: map[string]*genai.Schema{
-					"day": {
-						Type: genai.TypeInteger,
-					},
-					"location": {
-						Type: genai.TypeString,
-					},
-					"activities": {
-						Type: genai.TypeArray,
-						Items: &genai.Schema{
-							Type: genai.TypeString,
-						},
-					},
-					"meals": {
-						Type: genai.TypeArray,
-						Items: &genai.Schema{
-							Type: genai.TypeString,
-						},
-					},
-					"notes": {
-						Type: genai.TypeString,
-					},
-				},
-				Required: []string{
-					"day",
-					"location",
-					"activities",
-					"meals",
-				},
-			},
-		},
-		"notes": {
-			Type: genai.TypeString,
-		},
-	},
-	Required: []string{
-		"trip_name",
-		"days",
-	},
-	PropertyOrdering: []string{
-		"trip_name",
-		"days",
-		"notes",
-	},
-}
-
 func NewGemini(env *env.Env) (GeminiItf, error) {
 	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
 		APIKey:  env.GeminiAPIKey,
 		Backend: genai.BackendGeminiAPI,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	responseSchema, err := GetResponseSchema()
 	if err != nil {
 		return nil, err
 	}
@@ -95,11 +45,34 @@ func NewGemini(env *env.Env) (GeminiItf, error) {
 	}, nil
 }
 
-func (g *Gemini) Prompt(prompt string) (map[string]interface{}, error) {
+func GetResponseSchema() (*genai.Schema, error) {
+	content, err := os.ReadFile("./resource/schema.json")
+	if err != nil {
+		return nil, err
+	}
+
+	var schema genai.Schema
+	if err := schema.UnmarshalJSON(content); err != nil {
+		return nil, err
+	}
+
+	return &schema, nil
+}
+
+func (g *Gemini) Prompt(preferences []string, prompt string) (map[string]interface{}, error) {
+	var prefPrompt string
+	if preferences != nil {
+		prefPrompt += "FOLLOW PREFERENCES: ("
+		for _, pref := range preferences {
+			prefPrompt += pref + ", "
+		}
+		prefPrompt += ")\n\n"
+	}
+
 	result, err := g.client.Models.GenerateContent(
 		context.Background(),
 		g.model,
-		genai.Text(prompt),
+		genai.Text(prefPrompt+"NO NULL VALUES, NO N/A VALUES\n\n"+"PROMPT: "+prompt),
 		g.config,
 	)
 	if err != nil {

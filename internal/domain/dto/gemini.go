@@ -1,5 +1,6 @@
 package dto
 
 type GeminiRequest struct {
-	Text string `json:"text"`
+	UsePreference bool   `json:"use_preference" default:"true"`
+	Text          string `json:"text"`
 }

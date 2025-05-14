@@ -139,7 +139,7 @@ func (h AuthHandler) GoogleLogin(ctx *fiber.Ctx) error {
 		return res.Error(ctx, err)
 	}
 
-	return ctx.Redirect(url, fiber.StatusTemporaryRedirect)
+	return ctx.Redirect(url, fiber.StatusSeeOther)
 }
 
 func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
@@ -164,7 +164,7 @@ func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
 		url.QueryEscape(refreshToken),
 		isNewUser)
 
-	return ctx.Redirect(redirectUrl, fiber.StatusTemporaryRedirect)
+	return ctx.Redirect(redirectUrl, fiber.StatusSeeOther)
 }
 
 func (h AuthHandler) ChoosePreference(ctx *fiber.Ctx) error {
