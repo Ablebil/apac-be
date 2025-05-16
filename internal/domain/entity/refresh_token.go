@@ -10,7 +10,7 @@ import (
 type RefreshToken struct {
 	ID        uuid.UUID  `gorm:"column:id;type:char(36);primaryKey;not null"`
 	UserID    uuid.UUID  `gorm:"column:user_id;type:char(36);not null"`
-	User      *User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	User      *User      `gorm:"foreignKey:user_id;constraint:OnDelete:CASCADE"`
 	Token     string     `gorm:"column:token;type:varchar(255);not null"`
 	CreatedAt *time.Time `gorm:"column:created_at;type:timestamp;autoCreateTime"`
 	UpdatedAt *time.Time `gorm:"column:updated_at;type:timestamp;autoUpdateTime"`

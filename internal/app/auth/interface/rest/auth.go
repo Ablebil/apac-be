@@ -158,7 +158,7 @@ func (h AuthHandler) GoogleCallback(ctx *fiber.Ctx) error {
 		return res.Error(ctx, err)
 	}
 
-	redirectUrl := fmt.Sprintf("%s#access_token=%s&refresh_token=%s&is_new_user=%t",
+	redirectUrl := fmt.Sprintf("%s?access_token=%s&refresh_token=%s&is_new_user=%t",
 		h.env.FeRedirectUrl,
 		url.QueryEscape(accessToken),
 		url.QueryEscape(refreshToken),
