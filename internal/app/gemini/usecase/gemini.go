@@ -40,10 +40,8 @@ func NewGeminiUsecase(
 
 func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (map[string]interface{}, *res.Err) {
 	var preferences []string
-	var user *entity.User
 	if userId != uuid.Nil {
-		foundUser, err := uc.userRepository.FindById(userId)
-		user = foundUser
+		user, err := uc.userRepository.FindById(userId)
 
 		if err != nil {
 			return nil, res.ErrInternalServer("Failed to find user")
@@ -69,7 +67,6 @@ func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (m
 	trip := &entity.Trip{
 		UserID:  userId,
 		Content: string(content),
-		User:    user,
 	}
 
 	if err := uc.tripRepository.Create(trip); err != nil {
