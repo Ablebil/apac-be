@@ -1,112 +1,112 @@
 {
-    "type": "object",
-    "properties": {
-      "title": { "type": "string", "description": "Title of the trip" },
-      "destination": { "type": "string", "description": "Destination country/city" },
-      "startDate": { "type": "string", "format": "date-time", "description": "Start date of the trip" },
-      "endDate": { "type": "string", "format": "date-time", "description": "End date of the trip" },
-      "duration": { "type": "integer", "description": "Duration of the trip in days" },
-      "travelers": { "type": "integer", "description": "Number of travelers" },
-      "budget": { "type": "string", "description": "Estimated budget for the trip" },
-      "summary": { "type": "string", "description": "Brief summary of the trip" },
-      "days": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "day": { "type": "integer", "description": "Day number of the trip" },
-            "date": { "type": "string", "format": "date-time", "description": "Date of the day" },
-            "title": { "type": "string", "description": "Title for the day's activities" },
-            "description": { "type": "string", "description": "Description of the day's activities" },
-            "activities": {
-              "type": "array",
-              "items": {
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "description": "Title of the trip" },
+    "destination": { "type": "string", "description": "Destination country/city" },
+    "startDate": { "type": "string", "format": "date-time", "description": "Start date of the trip" },
+    "endDate": { "type": "string", "format": "date-time", "description": "End date of the trip" },
+    "duration": { "type": "integer", "description": "Duration of the trip in days" },
+    "travelers": { "type": "integer", "description": "Number of travelers" },
+    "budget": { "type": "string", "description": "Estimated budget for the trip" },
+    "summary": { "type": "string", "description": "Brief summary of the trip" },
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": { "type": "integer", "description": "Day number of the trip" },
+          "date": { "type": "string", "format": "date-time", "description": "Date of the day" },
+          "title": { "type": "string", "description": "Title for the day's activities" },
+          "description": { "type": "string", "description": "Description of the day's activities" },
+          "activities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "time": { "type": "string", "description": "Time of the activity" },
+                "title": { "type": "string", "description": "Title of the activity" },
+                "description": { "type": "string", "description": "Description of the activity" },
+                "location": { "type": "string", "description": "Location of the activity" },
+                "address": { "type": "string", "description": "Address of the location" },
+                "cost": { "type": "string", "description": "Cost of the activity" },
+                "tags": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Tags for the activity"
+                }
+              },
+              "required": ["time", "title", "description", "location", "address", "cost", "tags"]
+            }
+          },
+          "accommodation": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Name of the accommodation" },
+              "address": { "type": "string", "description": "Address of the accommodation" },
+              "checkIn": { "type": "string", "description": "Check-in time" },
+              "checkOut": { "type": "string", "description": "Check-out time" },
+              "cost": { "type": "string", "description": "Cost per night" }
+            },
+            "required": ["name", "address", "checkIn", "checkOut", "cost"]
+          },
+          "meals": {
+            "type": "object",
+            "properties": {
+              "breakfast": {
                 "type": "object",
                 "properties": {
-                  "time": { "type": "string", "description": "Time of the activity" },
-                  "title": { "type": "string", "description": "Title of the activity" },
-                  "description": { "type": "string", "description": "Description of the activity" },
-                  "location": { "type": "string", "description": "Location of the activity" },
+                  "time": { "type": "string", "description": "Time of the meal" },
+                  "title": { "type": "string", "description": "Title/name of the meal" },
+                  "description": { "type": "string", "description": "Description of the meal" },
+                  "location": { "type": "string", "description": "Location of the meal" },
                   "address": { "type": "string", "description": "Address of the location" },
-                  "cost": { "type": "string", "description": "Cost of the activity" },
-                  "tags": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Tags for the activity"
-                  }
+                  "cost": { "type": "string", "description": "Cost of the meal" }
                 },
-                "required": ["time", "title", "description", "location", "cost", "tags"]
-              }
-            },
-            "accommodation": {
-              "type": "object",
-              "properties": {
-                "name": { "type": "string", "description": "Name of the accommodation" },
-                "address": { "type": "string", "description": "Address of the accommodation" },
-                "checkIn": { "type": "string", "description": "Check-in time" },
-                "checkOut": { "type": "string", "description": "Check-out time" },
-                "cost": { "type": "string", "description": "Cost per night" }
+                "required": ["time", "title", "description", "location", "address", "cost"]
               },
-              "required": ["name", "address", "checkIn", "checkOut", "cost"]
-            },
-            "meals": {
-              "type": "object",
-              "properties": {
-                "breakfast": {
-                  "type": "object",
-                  "properties": {
-                    "time": { "type": "string", "description": "Time of the meal" },
-                    "title": { "type": "string", "description": "Title/name of the meal" },
-                    "description": { "type": "string", "description": "Description of the meal" },
-                    "location": { "type": "string", "description": "Location of the meal" },
-                    "address": { "type": "string", "description": "Address of the location" },
-                    "cost": { "type": "string", "description": "Cost of the meal" }
-                  },
-                  "required": ["time", "title", "description", "location", "address", "cost"]
+              "lunch": {
+                "type": "object",
+                "properties": {
+                  "time": { "type": "string", "description": "Time of the meal" },
+                  "title": { "type": "string", "description": "Title/name of the meal" },
+                  "description": { "type": "string", "description": "Description of the meal" },
+                  "location": { "type": "string", "description": "Location of the meal" },
+                  "address": { "type": "string", "description": "Address of the location" },
+                  "cost": { "type": "string", "description": "Cost of the meal" }
                 },
-                "lunch": {
-                  "type": "object",
-                  "properties": {
-                    "time": { "type": "string", "description": "Time of the meal" },
-                    "title": { "type": "string", "description": "Title/name of the meal" },
-                    "description": { "type": "string", "description": "Description of the meal" },
-                    "location": { "type": "string", "description": "Location of the meal" },
-                    "address": { "type": "string", "description": "Address of the location" },
-                    "cost": { "type": "string", "description": "Cost of the meal" }
-                  },
-                  "required": ["time", "title", "description", "location", "address", "cost"]
-                },
-                "dinner": {
-                  "type": "object",
-                  "properties": {
-                    "time": { "type": "string", "description": "Time of the meal" },
-                    "title": { "type": "string", "description": "Title/name of the meal" },
-                    "description": { "type": "string", "description": "Description of the meal" },
-                    "location": { "type": "string", "description": "Location of the meal" },
-                    "address": { "type": "string", "description": "Address of the location" },
-                    "cost": { "type": "string", "description": "Cost of the meal" }
-                  }
+                "required": ["time", "title", "description", "location", "address", "cost"]
+              },
+              "dinner": {
+                "type": "object",
+                "properties": {
+                  "time": { "type": "string", "description": "Time of the meal" },
+                  "title": { "type": "string", "description": "Title/name of the meal" },
+                  "description": { "type": "string", "description": "Description of the meal" },
+                  "location": { "type": "string", "description": "Location of the meal" },
+                  "address": { "type": "string", "description": "Address of the location" },
+                  "cost": { "type": "string", "description": "Cost of the meal" }
                 },
                 "required": ["time", "title", "description", "location", "address", "cost"]
               }
-            },
-            "transportation": {
-              "type": "object",
-              "properties": {
-                "mode": { "type": "string", "description": "Mode of transportation" },
-                "details": { "type": "string", "description": "Details about the transportation" },
-                "departureTime": { "type": "string", "description": "Departure time" },
-                "arrivalTime": { "type": "string", "description": "Arrival time" },
-                "cost": { "type": "string", "description": "Cost of transportation" }
-              }
-            },
-            "notes": { "type": "string", "description": "Additional notes for the day" }
+            }
           },
-          "required": ["day", "date", "title", "description", "activities", "accomodation", "meals", "transportation"]
-        }
-      },
-      "totalCost": { "type": "string", "description": "Total cost of the trip" }
+          "transportation": {
+            "type": "object",
+            "properties": {
+              "mode": { "type": "string", "description": "Mode of transportation" },
+              "details": { "type": "string", "description": "Details about the transportation" },
+              "departureTime": { "type": "string", "description": "Departure time" },
+              "arrivalTime": { "type": "string", "description": "Arrival time" },
+              "cost": { "type": "string", "description": "Cost of transportation" }
+            },
+            "required": ["mode", "details", "departureTime", "arrivalTime", "cost"]
+          },
+          "notes": { "type": "string", "description": "Additional notes for the day" }
+        },
+        "required": ["day", "date", "title", "description", "activities", "accommodation", "meals", "transportation"]
+      }
     },
-    "required": ["title", "destination", "startDate", "endDate", "duration", "days", "travelers", "budget", "summary", "totalCost"]
-  }
-  
+    "totalCost": { "type": "string", "description": "Total cost of the trip" }
+  },
+  "required": ["title", "destination", "startDate", "endDate", "duration", "days", "travelers", "budget", "summary", "totalCost"]
+}
