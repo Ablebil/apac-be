@@ -13,6 +13,7 @@ type UserRepositoryItf interface {
 	UpdateUser(userId uuid.UUID, user *entity.User) error
 	AddPreference(userId uuid.UUID, preference string) error
 	RemovePreference(userId uuid.UUID, preference string) error
+	RemoveAllPreferences(userId uuid.UUID) error
 }
 
 type UserRepository struct {
@@ -71,4 +72,8 @@ func (r *UserRepository) AddPreference(userId uuid.UUID, preference string) erro
 
 func (r *UserRepository) RemovePreference(userId uuid.UUID, preference string) error {
 	return r.db.Delete(&entity.Preference{}, "user_id = ? AND name = ?", userId, preference).Error
+}
+
+func (r *UserRepository) RemoveAllPreferences(userId uuid.UUID) error {
+	return r.db.Delete(&entity.Preference{}, "user_id = ?", userId).Error
 }

@@ -386,6 +386,7 @@ func (uc *AuthUsecase) ChoosePreference(payload *dto.ChoosePreferenceRequest) *r
 	}
 
 	if payload.Preferences != nil {
+		uc.userRepository.RemoveAllPreferences(user.ID)
 		for _, pref := range payload.Preferences {
 			if err := uc.userRepository.AddPreference(user.ID, pref); err != nil {
 				return res.ErrInternalServer("Failed to add preference")
