@@ -52,6 +52,8 @@ func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (m
 		}
 
 		preferences = user.ParseDTOGet().Preferences
+	} else {
+		return nil, res.ErrBadRequest("User ID is required to create a trip")
 	}
 
 	response, err := uc.gemini.Prompt(preferences, payload.Text)
