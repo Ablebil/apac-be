@@ -4,7 +4,6 @@ import (
 	"apac/internal/app/trip/repository"
 	"apac/internal/domain/dto"
 	res "apac/internal/infra/response"
-	"fmt"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/uuid"
@@ -54,8 +53,7 @@ func (uc *TripUsecase) GetAllTrips(userId uuid.UUID) ([]dto.TripSummaryResponse,
 	for _, trip := range trips {
 		var resp dto.TripSummaryResponse
 		dtoResp := trip.ParseDTOGet()
-		dtoResp["ID"] = trip.ID
-		fmt.Println(dtoResp)
+		dtoResp["id"] = trip.ID.String()
 		mapstructure.Decode(dtoResp, &resp)
 		resps = append(resps, resp)
 	}
