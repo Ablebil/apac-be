@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type TripRepositoryItf interface {
@@ -25,7 +24,7 @@ func NewTripRepository(db *gorm.DB) TripRepositoryItf {
 }
 
 func (t *TripRepository) Create(trip *entity.Trip) (*entity.Trip, error) {
-	err := t.db.Clauses(clause.Returning{}).Select("Email", "Password").Create(trip).Error
+	err := t.db.Create(trip).Error
 	if err != nil {
 		return nil, err
 	}
