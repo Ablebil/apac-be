@@ -71,9 +71,12 @@ func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (m
 		Content: string(content),
 	}
 
-	if err := uc.tripRepository.Create(trip); err != nil {
+	trip, err = uc.tripRepository.Create(trip)
+	if err != nil {
 		return nil, res.ErrInternalServer("Cannot add trip to history: " + err.Error())
 	}
+
+	response["id"] = trip.ID
 
 	return response, nil
 }

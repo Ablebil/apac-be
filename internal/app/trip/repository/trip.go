@@ -6,10 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type TripRepositoryItf interface {
-	Create(trip *entity.Trip) error
+	Create(trip *entity.Trip) (*entity.Trip, error)
 	FindById(userId uuid.UUID, tripId uuid.UUID) (*entity.Trip, error)
 	FindAll(userId uuid.UUID) ([]entity.Trip, error)
 	Delete(userId uuid.UUID, tripId uuid.UUID) error
@@ -23,8 +24,13 @@ func NewTripRepository(db *gorm.DB) TripRepositoryItf {
 	return &TripRepository{db}
 }
 
-func (t *TripRepository) Create(trip *entity.Trip) error {
-	return t.db.Create(trip).Error
+func (t *TripRepository) Create(trip *entity.Trip) (*entity.Trip, error) {
+	err := t.db.Clauses(clause.Returning{}).Select("Email", "Password").Create(trip).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return trip, nil
 }
 
 func (t *TripRepository) FindById(userId uuid.UUID, tripId uuid.UUID) (*entity.Trip, error) {
