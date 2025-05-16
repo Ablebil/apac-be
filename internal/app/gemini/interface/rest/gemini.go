@@ -41,10 +41,7 @@ func (h GeminiHandler) Prompt(ctx *fiber.Ctx) error {
 		return res.ValidationError(ctx, err)
 	}
 
-	userID := uuid.Nil
-	if payload.UsePreference {
-		userID = ctx.Locals("userID").(uuid.UUID)
-	}
+	userID := ctx.Locals("userID").(uuid.UUID)
 
 	response, err := h.GeminiUsecase.Prompt(payload, userID)
 	if err != nil {
