@@ -35,7 +35,7 @@
                     "description": "Tags for the activity"
                   }
                 },
-                "required": ["time", "title", "description"]
+                "required": ["time", "title", "description", "location", "cost", "tags"]
               }
             },
             "accommodation": {
@@ -47,7 +47,7 @@
                 "checkOut": { "type": "string", "description": "Check-out time" },
                 "cost": { "type": "string", "description": "Cost per night" }
               },
-              "required": ["name", "address"]
+              "required": ["name", "address", "checkIn", "checkOut", "cost"]
             },
             "meals": {
               "type": "object",
@@ -61,7 +61,8 @@
                     "location": { "type": "string", "description": "Location of the meal" },
                     "address": { "type": "string", "description": "Address of the location" },
                     "cost": { "type": "string", "description": "Cost of the meal" }
-                  }
+                  },
+                  "required": ["time", "title", "description", "location", "address", "cost"]
                 },
                 "lunch": {
                   "type": "object",
@@ -72,7 +73,8 @@
                     "location": { "type": "string", "description": "Location of the meal" },
                     "address": { "type": "string", "description": "Address of the location" },
                     "cost": { "type": "string", "description": "Cost of the meal" }
-                  }
+                  },
+                  "required": ["time", "title", "description", "location", "address", "cost"]
                 },
                 "dinner": {
                   "type": "object",
@@ -84,7 +86,8 @@
                     "address": { "type": "string", "description": "Address of the location" },
                     "cost": { "type": "string", "description": "Cost of the meal" }
                   }
-                }
+                },
+                "required": ["time", "title", "description", "location", "address", "cost"]
               }
             },
             "transportation": {
@@ -99,13 +102,13 @@
             },
             "notes": { "type": "string", "description": "Additional notes for the day" }
           },
-          "required": ["day", "date", "title", "description"]
+          "required": ["day", "date", "title", "description", "activities", "accomodation", "meals", "transportation"]
         }
       },
       "totalCost": { "type": "string", "description": "Total cost of the trip" },
       "createdAt": { "type": "string", "format": "date-time", "description": "When the itinerary was created" },
       "updatedAt": { "type": "string", "format": "date-time", "description": "When the itinerary was last updated" }
     },
-    "required": ["title", "destination", "startDate", "endDate", "duration", "days"]
+    "required": ["title", "destination", "startDate", "endDate", "duration", "days", "travelers", "budget", "summary"]
   }
   
