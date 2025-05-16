@@ -1,7 +1,8 @@
 package usecase
 
 import (
-	"apac/internal/app/user/repository"
+	trepo "apac/internal/app/trip/repository"
+	urepo "apac/internal/app/user/repository"
 	"apac/internal/domain/dto"
 	"apac/internal/domain/env"
 	"apac/internal/infra/gemini"
@@ -17,14 +18,21 @@ type GeminiUsecaseItf interface {
 type GeminiUsecase struct {
 	env            *env.Env
 	gemini         gemini.GeminiItf
-	userRepository repository.UserRepositoryItf
+	userRepository urepo.UserRepositoryItf
+	tripRepository trepo.TripRepositoryItf
 }
 
-func NewGeminiUsecase(env *env.Env, gemini gemini.GeminiItf, userRepository repository.UserRepositoryItf) GeminiUsecaseItf {
+func NewGeminiUsecase(
+	env *env.Env,
+	gemini gemini.GeminiItf,
+	userRepository urepo.UserRepositoryItf,
+	tripRepository trepo.TripRepositoryItf,
+) GeminiUsecaseItf {
 	return &GeminiUsecase{
 		env:            env,
 		gemini:         gemini,
 		userRepository: userRepository,
+		tripRepository: tripRepository,
 	}
 }
 
@@ -47,6 +55,10 @@ func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (m
 	response, err := uc.gemini.Prompt(preferences, payload.Text)
 	if err != nil {
 		return nil, res.ErrInternalServer("AI prompting failed: " + err.Error())
+	}
+
+	if err := uc.tripRepository.Create(response); err != nil {
+		return nil, res.ErrInternalServer("Cannot add trip to history")
 	}
 
 	return response, nil
