@@ -105,10 +105,8 @@
           "required": ["day", "date", "title", "description", "activities", "accomodation", "meals", "transportation"]
         }
       },
-      "totalCost": { "type": "string", "description": "Total cost of the trip" },
-      "createdAt": { "type": "string", "format": "date-time", "description": "When the itinerary was created" },
-      "updatedAt": { "type": "string", "format": "date-time", "description": "When the itinerary was last updated" }
+      "totalCost": { "type": "string", "description": "Total cost of the trip" }
     },
-    "required": ["title", "destination", "startDate", "endDate", "duration", "days", "travelers", "budget", "summary"]
+    "required": ["title", "destination", "startDate", "endDate", "duration", "days", "travelers", "budget", "summary", "totalCost"]
   }
   
