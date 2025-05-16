@@ -4,9 +4,11 @@ import (
 	trepo "apac/internal/app/trip/repository"
 	urepo "apac/internal/app/user/repository"
 	"apac/internal/domain/dto"
+	"apac/internal/domain/entity"
 	"apac/internal/domain/env"
 	"apac/internal/infra/gemini"
 	res "apac/internal/infra/response"
+	"encoding/json"
 
 	"github.com/google/uuid"
 )
@@ -38,8 +40,10 @@ func NewGeminiUsecase(
 
 func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (map[string]interface{}, *res.Err) {
 	var preferences []string
+	var user *entity.User
 	if userId != uuid.Nil {
-		user, err := uc.userRepository.FindById(userId)
+		foundUser, err := uc.userRepository.FindById(userId)
+		user = foundUser
 
 		if err != nil {
 			return nil, res.ErrInternalServer("Failed to find user")
@@ -57,7 +61,18 @@ func (uc *GeminiUsecase) Prompt(payload *dto.GeminiRequest, userId uuid.UUID) (m
 		return nil, res.ErrInternalServer("AI prompting failed: " + err.Error())
 	}
 
-	if err := uc.tripRepository.Create(response); err != nil {
+	content, err := json.Marshal(response)
+	if err != nil {
+		return nil, res.ErrInternalServer("Unable to parse JSON response into string")
+	}
+
+	trip := &entity.Trip{
+		UserID:  userId,
+		Content: string(content),
+		User:    user,
+	}
+
+	if err := uc.tripRepository.Create(trip); err != nil {
 		return nil, res.ErrInternalServer("Cannot add trip to history")
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 type TripRepositoryItf interface {
-	Create(trip map[string]interface{}) error
+	Create(trip *entity.Trip) error
 	FindById(userId uuid.UUID, tripId uuid.UUID) (*entity.Trip, error)
 	FindAll(userId uuid.UUID) ([]entity.Trip, error)
 	Delete(userId uuid.UUID, tripId uuid.UUID) error
@@ -23,7 +23,7 @@ func NewTripRepository(db *gorm.DB) TripRepositoryItf {
 	return &TripRepository{db}
 }
 
-func (t *TripRepository) Create(trip map[string]interface{}) error {
+func (t *TripRepository) Create(trip *entity.Trip) error {
 	return t.db.Create(trip).Error
 }
 

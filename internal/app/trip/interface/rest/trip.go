@@ -20,6 +20,8 @@ func NewTripHandler(routerGroup fiber.Router, tripUsecase usecase.TripUsecaseItf
 
 	routerGroup = routerGroup.Group("/trips")
 	routerGroup.Get("/:id", m.Authentication, TripHandler.GetTripById)
+	routerGroup.Get("/", m.Authentication, TripHandler.GetAllTrips)
+	routerGroup.Delete("/:id", m.Authentication, TripHandler.Delete)
 }
 
 func (h TripHandler) GetTripById(ctx *fiber.Ctx) error {
