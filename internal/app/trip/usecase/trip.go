@@ -2,14 +2,16 @@ package usecase
 
 import (
 	"apac/internal/app/trip/repository"
+	"apac/internal/domain/dto"
 	res "apac/internal/infra/response"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/uuid"
 )
 
 type TripUsecaseItf interface {
 	GetTripById(userId uuid.UUID, tripId uuid.UUID) (map[string]interface{}, *res.Err)
-	GetAllTrips(userId uuid.UUID) ([]map[string]interface{}, *res.Err)
+	GetAllTrips(userId uuid.UUID) ([]dto.TripSummaryResponse, *res.Err)
 	Delete(userId uuid.UUID, tripId uuid.UUID) *res.Err
 }
 
@@ -37,7 +39,7 @@ func (uc *TripUsecase) GetTripById(userId uuid.UUID, tripId uuid.UUID) (map[stri
 	return resp, nil
 }
 
-func (uc *TripUsecase) GetAllTrips(userId uuid.UUID) ([]map[string]interface{}, *res.Err) {
+func (uc *TripUsecase) GetAllTrips(userId uuid.UUID) ([]dto.TripSummaryResponse, *res.Err) {
 	trips, err := uc.tripRepository.FindAll(userId)
 	if err != nil {
 		return nil, res.ErrInternalServer("Failed to find trip")
@@ -47,9 +49,13 @@ func (uc *TripUsecase) GetAllTrips(userId uuid.UUID) ([]map[string]interface{}, 
 		return nil, res.ErrNotFound("Trip not found")
 	}
 
-	var resps []map[string]interface{}
+	var resps []dto.TripSummaryResponse
 	for _, trip := range trips {
-		resps = append(resps, trip.ParseDTOGet())
+		var resp dto.TripSummaryResponse
+		dtoResp := trip.ParseDTOGet()
+		dtoResp["id"] = trip.ID
+		mapstructure.Decode(dtoResp, &resp)
+		resps = append(resps, resp)
 	}
 
 	return resps, nil
